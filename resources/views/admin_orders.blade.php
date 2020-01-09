@@ -146,11 +146,13 @@ table .update_order_status{
                     <button class="btn btn-outline-success btn-sm" id="edit_mode_btn">편집모드</button>
                     <button id="delivery_status_modal_btn" class="btn btn-outline-info btn-sm" data-toggle="modal" data-target="#delivery_status_modal" disabled>주문상태일괄변경</button>
                     <button id="comment_modal_btn" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#comment_modal" disabled>참고사항일괄변경</button>
+                    <button id="delete_orders_btn" class="btn btn-outline-danger btn-sm" disabled>주문내역일괄삭제</button>
                 </div>
 
                 {!! Form::open(['url' => '/admin/orders', 'method'=>'PUT', 'name' => 'form_order_update']) !!}
                     <input type="hidden" name="delivery_status">
                     <input type="hidden" name="comment">
+                    <input type="hidden" name="is_deleted" value="0">
                 <table class="table table-bordered">
                     <thead>
                         <tr>
@@ -186,7 +188,7 @@ table .update_order_status{
                                 <span class="no">{{ ($orders->currentPage()-1) * $orders->perPage() + ($idx+1) }}</span>
                                 <input type="checkbox" name="orders[{{ $order->id }}]" class="form-control edit_box">
                                 <button data-order="{{ json_encode($order) }}" class="btn btn-sm btn-primary edit_box change_receiver_btn" type="button">고객정보수정</button>
-                                <button data-orderId="{{ $order->id }}" class="btn btn-sm btn-danger edit_box delete_order_btn" type="button">삭제</button>
+                                <!-- <button data-orderId="{{ $order->id }}" class="btn btn-sm btn-danger edit_box delete_order_btn" type="button">삭제</button>ㅗ -->
                             </td>
                             <td>
                                 <a href="/admin/orders/{{ $order->id }}">{{ $order->id }}</a>
@@ -307,8 +309,8 @@ table .update_order_status{
             <input type="text" name="comment" placeholder="참고사항" class="form-control">
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary" id="change_comment">Save changes</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+            <button type="button" class="btn btn-primary" id="change_comment">저장</button>
         </div>
         </div>
     </div>
@@ -341,8 +343,8 @@ table .update_order_status{
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="submit" class="btn btn-primary" id="change_receiver">Save changes</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+            <button type="submit" class="btn btn-primary" id="change_receiver">저장</button>
         </div>
         </div>
     </form>
@@ -380,6 +382,7 @@ var editTable = editRoot.children().eq(1);
 //주문상태일괄변경 버튼
 var delivery_status_modal_btn = $('#delivery_status_modal_btn');
 var comment_modal_btn = $('#comment_modal_btn');
+var delete_orders_btn = $('#delete_orders_btn');
 
 //편집모드 토클
 $('#edit_mode_btn').on('click', function(){
@@ -388,8 +391,8 @@ $('#edit_mode_btn').on('click', function(){
 
     delivery_status_modal_btn.prop('disabled', !editMode);
     comment_modal_btn.prop('disabled', !editMode);
+    delete_orders_btn.prop('disabled', !editMode);
     $(form_update.submit_btn).prop('disabled', !editMode);
-    
     
 
     var trs = editTable.find('tr').each(function(idx, tr){
@@ -454,14 +457,25 @@ $(".change_receiver_btn").on("click", function(e){
     form.action = '/admin/orders/' + order.id + '/receiver'
     $('#receiver_change_modal').modal('show');
 })
-$(".delete_order_btn").on("click", function(e){
-    var orderId = e.target.dataset.orderid;
-    console.log(orderId);
-    var form = document.forms.form_delete_order;
-    form.action += "/" + orderId;
-    console.log(form.action);
-    form.submit();
-    
+
+//주문내역 일괄삭제
+
+//주문내역 개별삭제
+// $(".delete_order_btn").on("click", function(e){
+//     var orderId = e.target.dataset.orderid;
+//     console.log(orderId);
+//     var form = document.forms.form_delete_order;
+//     form.action += "/" + orderId;
+//     console.log(form.action);
+//     form.submit();
+// })
+
+//주문내역 일괄삭제
+delete_orders_btn.on("click", function(){
+    if( confirm("해당주문내역을 정말 삭제하시겠습니까?") ){
+        form_update.is_deleted.value = "1";
+        form_update.submit();
+    }
 })
 </script>
 @endpush

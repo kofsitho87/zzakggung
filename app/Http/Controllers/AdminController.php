@@ -326,49 +326,60 @@ class AdminController extends Controller
     {
         $delivery_status = $request->delivery_status;
         $comment         = $request->comment;
+        $is_deleted      = $request->is_deleted;
 
-        // var_dump($delivery_status); //7: 반품완료
+        // var_dump($delivery_status);
+        // var_dump(!!$is_deleted);
         // die();
         
         if( !$orders = $request->orders )
         {
             return redirect()->back();
         }
-        else if(!$delivery_status && !$comment)
+        else if(!$delivery_status && !$comment && !$is_deleted)
         {
             return redirect()->back()->withErrors('업데이트할 정보가 없습니다.');
         }
         
+        $msg = "";
         foreach($orders as $order_id => $value)
         {
             if( $order = Order::find($order_id) )
             {
-                if( $delivery_status )
+                if( $is_deleted )
                 {
-                    $order->delivery_status = $delivery_status;
+                    $order->delete();
+                    $msg = "주문내역 삭제가 완료되었습니다.";
                 }
-                if( $comment )
+                else 
                 {
-                    $order->comment = $comment;
-                }
-
-                //order 업데이트시 상태가 반품완료일때 업체에게 사용가능적립금 추가!(2)
-                if( $order->save() && $delivery_status == 7 ){
-                    $trade = new Trade;
-                    $trade->user_id = $order->user_id;
-                    $trade->is_plus = true;
-                    $trade->price   = $order->product->price($order->user->shop_type_id) * $order->qty;
-                    $trade->content = "주문번호: " . $order->id . "번의 반품으로 인한 사용가능적립금 추가";
-
-                    if( ! $trade->save() )
+                    if( $delivery_status )
                     {
-                        return redirect()->back()->withErrors(['DB ERROR : 반품완료일때 업체에게 사용가능적립금 추가 실패']);
+                        $order->delivery_status = $delivery_status;
+                    }
+                    if( $comment )
+                    {
+                        $order->comment = $comment;
+                    }
+                    $msg = "주문내역 업데이트가 완료되었습니다.";
+                    
+                    //order 업데이트시 상태가 반품완료일때 업체에게 사용가능적립금 추가!(2)
+                    if( $order->save() && $delivery_status == 7 ){
+                        $trade = new Trade;
+                        $trade->user_id = $order->user_id;
+                        $trade->is_plus = true;
+                        $trade->price   = $order->product->price($order->user->shop_type_id) * $order->qty;
+                        $trade->content = "주문번호: " . $order->id . "번의 반품으로 인한 사용가능적립금 추가";
+                        if( ! $trade->save() )
+                        {
+                            return redirect()->back()->withErrors(['DB ERROR : 반품완료일때 업체에게 사용가능적립금 추가 실패']);
+                        }
                     }
                 }
             }
         }
 
-        return redirect()->back()->with(['success' => true]);
+        return redirect()->back()->with(['success' => true, 'msg' => $msg]);
     }
 
     public function updateOrder(Request $request, Order $order)
