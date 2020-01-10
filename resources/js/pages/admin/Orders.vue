@@ -70,6 +70,16 @@
       <template v-slot:table-caption>
         주문내역 관리
       </template>
+      <template v-slot:footer>
+        <tr>
+          <th colspan="4">
+            총합계액
+          </th>
+          <td colspan="16">
+            <strong />원
+          </td>
+        </tr>
+      </template>
     </b-table>
     <div>
       <b-pagination-nav
@@ -179,7 +189,7 @@ export default {
         let {orders} = await this.$store.dispatch("get", {
           api: `orders?page=${page}`,
           payload: {
-            count: 3
+            //count: 3
           }
         })
         this.orders = orders.data.map((item, idx) => {
