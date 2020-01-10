@@ -13,6 +13,8 @@ class User extends Authenticatable
     //use SoftDeletes;
     use Notifiable;
 
+    protected $hidden = ['password', 'remember_token'];
+
     public function orders()
     {
         return $this->hasMany('\App\Model\Order', 'user_id')->with('product');

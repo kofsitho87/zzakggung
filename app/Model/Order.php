@@ -10,29 +10,30 @@ class Order extends Model
     use SoftDeletes;
     
     protected $fillable = [
-            'user_id', 
-            'product_id', 
-            'option',
-            'qty', 
-            'receiver', 
-            'phone_1', 
-            'phone_2', 
-            'zipcode', 
-            'address', 
-            'delivery_message', 
-            'delivery_price', 
+        'user_id', 
+        'product_id', 
+        'option',
+        'qty', 
+        'receiver', 
+        'phone_1', 
+        'phone_2', 
+        'zipcode', 
+        'address', 
+        'delivery_message', 
+        'delivery_price', 
 
-            'product_name', 
-            'price',
-            'model_id',
-            'can_upload',
-            'set_item',
-            'set_master',
-            'set_count',
-        ];
-
+        'product_name', 
+        'price',
+        'model_id',
+        'can_upload',
+        'set_item',
+        'set_master',
+        'set_count',
+    ];
+    
+    protected $appends = ['product_price'];
     // protected $attributes = [
-    //     'product'
+    //     'productPrice'
     // ];
 
     // public function getProductAttribute()
@@ -40,10 +41,16 @@ class Order extends Model
     //     return $this->product;
     // }
 
+    public function getProductPriceAttribute()
+    {
+        return $this->product->price($this->user->shop_type_id);
+    }
+
     public function product()
     {
         return $this->belongsTo('\App\Model\Product', 'product_id');
     }
+
 
     public function status()
     {

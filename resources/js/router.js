@@ -6,6 +6,10 @@ Vue.use(VueRouter)
 
 import AdminHome from "./pages/admin/Home"
 import AdminUsers from "./pages/admin/Users"
+import AdminUser from "./pages/admin/User"
+import AdminUserTrades from "./pages/admin/UserTrades"
+
+import AdminOrders from "./pages/admin/Orders"
 
 const requireAuth = (to, from, next) => {
   if (store.getters.isAuthenticated) return next()
@@ -30,7 +34,31 @@ const router = new VueRouter({
       meta: {
         title: "거래처관리"
       }
-    }
+    },
+    {
+      path: "/users/:id",
+      component: AdminUser,
+      name: "AdminUser",
+      meta: {
+        title: "유저"
+      }
+    },
+    {
+      path: "/users/:id/trades",
+      component: AdminUserTrades,
+      name: "AdminUserTrades",
+      meta: {
+        title: "거래내역"
+      }
+    },
+    {
+      path: "/orders",
+      component: AdminOrders,
+      name: "adminOrders",
+      meta: {
+        title: "주문내역관리"
+      }
+    },
   ]
 })
 

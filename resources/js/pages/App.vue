@@ -1,7 +1,10 @@
 <template>
   <div>
     <Header />
-    <b-container class="py-4">
+    <b-container
+      fluid
+      class="py-4"
+    >
       <router-view />
     </b-container>
   </div>
@@ -12,6 +15,9 @@ import Header from "../components/Header"
 export default {
   components: {
     Header
+  },
+  created(){
+    this.$store.dispatch("getShopTypes")
   }
 }
 </script>

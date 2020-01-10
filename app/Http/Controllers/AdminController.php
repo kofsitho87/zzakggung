@@ -80,8 +80,6 @@ class AdminController extends Controller
         $this->checkAdmin();
 
         $users = User::where('is_admin', false)->paginate(50);
-
-
         $data = compact('users');
         return view('admin_users', $data);
     }

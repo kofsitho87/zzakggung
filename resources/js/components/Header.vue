@@ -39,11 +39,9 @@
         <b-nav-item :to="{name: 'adminUsers'}">
           거래처관리
         </b-nav-item>
-        <b-nav-item
-          href="#"
-          disabled
-        >
-          Disabled
+        <b-nav-item :to="{name: 'adminOrders'}">
+          주문내역관리
+        </b-nav-item>
         </b-nav-item>
       </b-navbar-nav>
 

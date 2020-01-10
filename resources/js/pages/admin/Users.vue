@@ -62,8 +62,34 @@
     <b-table
       striped
       hover
+      :fields="fields"
       :items="users"
-    />
+      :busy="isLoading"
+    >
+      <template v-slot:cell(index)="data">
+        {{ data.index + 1 }}
+      </template>
+      <template v-slot:cell(user)="data">
+        <router-link :to="{name: 'AdminUser', params: {id: data.value.id}}">
+          <b class="text-info">{{ data.value.email }}</b>
+        </router-link>
+      </template>
+      <template v-slot:cell(trade_link_id)="data">
+        <router-link :to="{name: 'AdminUserTrades', params: {id: data.value}}">
+          거래내역확인
+        </router-link>
+      </template>
+
+      <template v-slot:table-busy>
+        <div class="text-center text-danger my-2">
+          <b-spinner class="align-middle" />
+          <strong>Loading...</strong>
+        </div>
+      </template>
+      <template v-slot:table-caption>
+        거래처 생성/수정 및 거래처별 주문내역 관리
+      </template>
+    </b-table>
   </div>
 </template>
 
@@ -71,78 +97,60 @@
 export default {
   data(){
     return {
-      users:[
+      isLoading: false,
+      fields: [
         {
-          "id": 1,
-          "name": "Leanne Graham",
-          "username": "Bret",
-          "email": "Sincere@april.biz",
-          "website": "hildegard.org",
+          key: "index",
+          label: "순서"
         },
         {
-          "id": 2,
-          "name": "Ervin Howell",
-          "username": "Antonette",
-          "email": "Shanna@melissa.tv",
-          "website": "anastasia.net",
+          key: "user",
+          label: "아이디",
         },
         {
-          "id": 3,
-          "name": "Clementine Bauch",
-          "username": "Samantha",
-          "email": "Nathan@yesenia.net",
-          "website": "ramiro.info",
+          key: "name",
+          label: "거래처이름",
         },
         {
-          "id": 4,
-          "name": "Patricia Lebsack",
-          "username": "Karianne",
-          "email": "Julianne.OConner@kory.org",
-          "website": "kale.biz",
+          key: "shop_type_id",
+          label: "거채처타입",
         },
         {
-          "id": 5,
-          "name": "Chelsey Dietrich",
-          "username": "Kamren",
-          "email": "Lucio_Hettinger@annie.ca",
-          "website": "demarco.info",
+          key: "created_at",
+          label: "생성일",
         },
         {
-          "id": 6,
-          "name": "Mrs. Dennis Schulist",
-          "username": "Leopoldo_Corkery",
-          "email": "Karley_Dach@jasper.info",
-          "website": "ola.org",
-        },
-        {
-          "id": 7,
-          "name": "Kurtis Weissnat",
-          "username": "Elwyn.Skiles",
-          "email": "Telly.Hoeger@billy.biz",
-          "website": "elvis.io",
-        },
-        {
-          "id": 8,
-          "name": "Nicholas Runolfsdottir V",
-          "username": "Maxime_Nienow",
-          "email": "Sherwood@rosamond.me",
-          "website": "jacynthe.com",
-        },
-        {
-          "id": 9,
-          "name": "Glenna Reichert",
-          "username": "Delphine",
-          "email": "Chaim_McDermott@dana.io",
-          "website": "conrad.com",
-        },
-        {
-          "id": 10,
-          "name": "Clementina DuBuque",
-          "username": "Moriah.Stanton",
-          "email": "Rey.Padberg@karina.biz",
-          "website": "ambrose.net",
+          key: "trade_link_id",
+          label: "거래내역관리",
         }
-      ]
+      ],
+      users:[]
+    }
+  },
+  mounted(){
+    this.getUsers()
+  },
+  methods: {
+    async getUsers(){
+      this.isLoading = true
+      try {
+        let {users} = await this.$store.dispatch("get", {
+          api: "users",
+          payload: {}
+        })
+        this.users = users.data.map((item, idx) => {
+          item.trade_link_id = item.id
+          item.user = {
+            id: item.id,
+            email: item.email
+          }
+          return item
+        })
+      } catch (e){
+        console.log(e)
+      } finally {
+        this.isLoading = false
+      }
     }
   }
 }

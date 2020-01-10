@@ -1,0 +1,106 @@
+<template>
+  <div v-if="user">
+    <b-card
+      tag="article"
+      class="mb-5"
+    >
+      <b-form
+        @submit="updateUser"
+      >
+        <b-form-group
+          label="거래처이름"
+          label-for="name"
+          description="거래처이름"
+        >
+          <b-form-input
+            id="name"
+            v-model="user.name"
+            type="text"
+            required
+          />
+        </b-form-group>
+        <b-form-group
+          label="거래처아이디"
+          label-for="email"
+          description="거래처아이디"
+        >
+          <b-form-input
+            id="email"
+            v-model="user.email"
+            type="text"
+            required
+          />
+        </b-form-group>
+        <b-form-group
+          label="거래처타입"
+          label-for="shop_type_id"
+          description="거래처타입"
+        >
+          <b-form-select
+            id="shop_type_id"
+            v-model="user.shop_type_id"
+            :options="shopTypes"
+            required
+          />
+        </b-form-group>
+      </b-form>
+
+      <template v-slot:header>
+        <strong>{{ user.name }}</strong> 거래처
+      </template>
+      <template v-slot:footer>
+        <b-button
+          variant="info"
+          class="float-right"
+        >
+          생성
+        </b-button>
+      </template>
+    </b-card>
+  </div>
+</template>
+
+<script>
+export default {
+  data(){
+    return {
+      isLoading: false,
+      userId: this.$route.params.id,
+      user: null
+    }
+  },
+  computed: {
+    shopTypes(){
+      return this.$store.getters.shopTypes
+    }
+  },
+  mounted(){
+    this.getUser()
+  },
+  methods: {
+    async getUser(){
+      this.isLoading = true
+      try {
+        let {
+          user
+        } = await this.$store.dispatch("get", {
+          api: `user/${this.userId}`,
+          payload: {}
+        })
+        this.user = user
+      } catch (e){
+        console.log(e)
+      } finally {
+        this.isLoading = false
+      }
+    }
+  },
+  async updateUser(){
+
+  }
+}
+</script>
+
+<style>
+
+</style>
