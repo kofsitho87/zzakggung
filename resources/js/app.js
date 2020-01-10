@@ -5,9 +5,9 @@
  * building robust, powerful web applications using Vue and Laravel.
  */
 
-require('./bootstrap');
+//require('./bootstrap');
 
-window.Vue = require('vue');
+//window.Vue = require("vue")
 
 /**
  * The following block of code may be used to automatically register your
@@ -20,8 +20,6 @@ window.Vue = require('vue');
 // const files = require.context('./', true, /\.vue$/i)
 // files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key)))
 
-//Vue.component('example-component', require('./components/ExampleComponent.vue'));
-
 /**
  * Next, we will create a fresh Vue application instance and attach it to
  * the page. Then, you may begin adding components to this application
@@ -30,14 +28,26 @@ window.Vue = require('vue');
 
 // import vueXlsxTable from 'vue-xlsx-table';
 // Vue.use(vueXlsxTable, {rABS: false});
-// const app = new Vue({
-//     el: '#app',
-//     data(){
-//         return {
 
-//         }
-//     },
-//     methods: {
+import Vue from "vue"
+import VueBootstrap from "bootstrap-vue"
+import Vuesax from "vuesax"
+import Vuelidate from "vuelidate"
 
-//     }
-// });
+import "bootstrap/dist/css/bootstrap.css"
+import "bootstrap-vue/dist/bootstrap-vue.css"
+import "vuesax/dist/vuesax.css"
+
+import router from "./router"
+import store from "./store"
+
+Vue.use(VueBootstrap)
+Vue.use(Vuesax)
+Vue.use(Vuelidate)
+
+import App from "./pages/App"
+new Vue({
+  store,
+  router,
+  render: h => h(App)
+}).$mount("#app")
