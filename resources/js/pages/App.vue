@@ -7,6 +7,10 @@
     >
       <router-view />
     </b-container>
+    <notifications
+      group="top-center"
+      position="top center"
+    />
   </div>
 </template>
 

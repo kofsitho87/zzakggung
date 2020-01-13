@@ -35,7 +35,14 @@ const actions = {
   },
   async put(_, { api, payload }) {
     try {
-      return await axios.put(`/api/${api}`, {
+      return await axios.put(`/api/admin/${api}`, payload)
+    } catch (e) {
+      throw e
+    }
+  },
+  async delete(_, { api, payload }) {
+    try {
+      return await axios.delete(`/api/admin/${api}`, {
         params: payload
       })
     } catch (e) {

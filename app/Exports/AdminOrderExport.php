@@ -20,8 +20,9 @@ class AdminOrderExport implements FromQuery, WithMapping, WithHeadings
     private $keyword_option;
     private $keyword;
     private $order_by;
+    private $count;
 
-    public function __construct($delivery_status, $sdate, $edate, $keyword_option, $keyword, $order_by = null)
+    public function __construct($delivery_status, $sdate, $edate, $keyword_option, $keyword, $order_by = null, $count = 15)
     {
         $this->delivery_status = $delivery_status;
         $this->sdate = $sdate;
@@ -30,6 +31,7 @@ class AdminOrderExport implements FromQuery, WithMapping, WithHeadings
         $this->keyword_option = $keyword_option;
         $this->keyword        = $keyword;
         $this->order_by       = $order_by;
+        $this->count          = $count;
     }
 
     public function headings(): array
@@ -112,7 +114,7 @@ class AdminOrderExport implements FromQuery, WithMapping, WithHeadings
         // }
 
         $order = $this->order_by == 1 ? 'ASC' : 'DESC';
-        $query->orderBy('id', $order);
+        $query->orderBy('id', $order)->take($this->count);
 
         return $query;
     }

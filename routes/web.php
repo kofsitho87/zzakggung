@@ -11,4 +11,8 @@
 |
 */
 
+Route::prefix('admin')->group(function(){
+  Route::get('/orders/export', 'Api\AdminController@orderExport')->name('admin.orders.export');
+});
+
 Route::get('/{any}', 'SpaController@index')->where('any', '.*');

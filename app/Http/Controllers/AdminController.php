@@ -779,6 +779,7 @@ class AdminController extends Controller
         $keyword_option  = $request->keyword_option;
         $keyword         = trim($request->keyword);
         $order_by        = $request->order_by;
+        $count           = $request->count;
 
         if($request->delivery_status > 0 )
         {

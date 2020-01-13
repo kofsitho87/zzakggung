@@ -33,6 +33,7 @@ import Vue from "vue"
 import VueBootstrap from "bootstrap-vue"
 import Vuesax from "vuesax"
 import Vuelidate from "vuelidate"
+import Notifications from "vue-notification"
 import CustomFilters from "./plugins/CustomFilters"
 
 import "bootstrap/dist/css/bootstrap.css"
@@ -46,6 +47,7 @@ Vue.use(VueBootstrap)
 Vue.use(Vuesax)
 Vue.use(Vuelidate)
 Vue.use(CustomFilters)
+Vue.use(Notifications)
 
 import App from "./pages/App"
 new Vue({
