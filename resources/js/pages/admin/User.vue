@@ -52,8 +52,10 @@
         <b-button
           variant="info"
           class="float-right"
+          @click="updateUser"
+          :disabled="isLoading"
         >
-          생성
+          업데이트
         </b-button>
       </template>
     </b-card>
@@ -89,14 +91,37 @@ export default {
         })
         this.user = user
       } catch (e){
-        console.log(e)
+        this.$notify({
+          group: "top-center",
+          type: "error",
+          title: e.message
+        })
+      } finally {
+        this.isLoading = false
+      }
+    },
+    async updateUser(){
+      this.isLoading = true
+      try {
+        await this.$store.dispatch("put", {
+          api: `user/${this.userId}`,
+          payload: this.user
+        })
+        this.$notify({
+          group: "top-center",
+          type: "success",
+          title: "유저 업데이트 성공"
+        })
+      } catch (e){
+        this.$notify({
+          group: "top-center",
+          type: "error",
+          title: e.message
+        })
       } finally {
         this.isLoading = false
       }
     }
-  },
-  async updateUser(){
-
   }
 }
 </script>

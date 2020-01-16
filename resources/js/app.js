@@ -31,20 +31,22 @@
 
 import Vue from "vue"
 import VueBootstrap from "bootstrap-vue"
-import Vuesax from "vuesax"
+//import Vuesax from "vuesax"
 import Vuelidate from "vuelidate"
 import Notifications from "vue-notification"
 import CustomFilters from "./plugins/CustomFilters"
 
 import "bootstrap/dist/css/bootstrap.css"
 import "bootstrap-vue/dist/bootstrap-vue.css"
-import "vuesax/dist/vuesax.css"
+//import "vuesax/dist/vuesax.css"
+
+import "./assets/sass/custom.scss"
 
 import router from "./router"
 import store from "./store"
 
 Vue.use(VueBootstrap)
-Vue.use(Vuesax)
+//Vue.use(Vuesax)
 Vue.use(Vuelidate)
 Vue.use(CustomFilters)
 Vue.use(Notifications)

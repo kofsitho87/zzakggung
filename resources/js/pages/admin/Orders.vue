@@ -168,6 +168,7 @@
             size="sm"
             variant="success"
             @click="excelDownload"
+            :disabled="form.sdate == null || form.edate == null"
           >
             엑셀다운로드
           </b-button>
@@ -218,6 +219,7 @@
       <template v-slot:cell(index)="data">
         {{ (currentPage-1) * perPage + (data.index + 1) }}
         <b-button
+          class="font-size-1"
           size="sm"
           variant="info"
           @click="showChangeReceiverModal(data.index)"
@@ -225,9 +227,14 @@
           고객정보수정
         </b-button>
       </template>
+      <template v-slot:cell(id)="data">
+        <router-link :to="{name: 'AdminOrder', params: {id: data.value}}">
+          {{ data.value }}
+        </router-link>
+      </template>
       <template v-slot:cell(user)="data">
         <router-link :to="{name: 'AdminUser', params: {id: data.value.id}}">
-          <b class="text-info">{{ data.value.email }}</b>
+          <b class="text-info">{{ data.value.name }}</b>
         </router-link>
       </template>
       <template v-slot:cell(total_price)="data">
@@ -257,7 +264,6 @@
           <thead>
             <tr>
               <th>배송메세지</th>
-              <th>송장번호</th>
               <th>참고사항</th>
               <th>교환/반품메세지</th>
             </tr>
@@ -265,7 +271,6 @@
           <tbody>
             <tr>
               <td>{{ row.item.delivery_message }}</td>
-              <td>{{ row.item.delivery_code }}</td>
               <td>{{ row.item.comment }}</td>
               <td>{{ row.item.message ? row.item.message.content : null }}</td>
             </tr>
@@ -275,6 +280,19 @@
 
       <template v-slot:thead-top>
         <b-tr>
+          <b-th
+            colspan="2"
+            variant="primary"
+          >
+            <b-button
+              type="button"
+              variant="success"
+              size="sm"
+              @click="toggleSelectAll"
+            >
+              전체{{ selectAll ? '해제' : '선택' }}
+            </b-button>
+          </b-th>
           <b-th
             colspan="2"
             variant="primary"
@@ -289,7 +307,7 @@
           </b-th>
         </b-tr>
       </template>
-      <template v-slot:tfoot>
+      <!-- <template v-slot:tfoot>
         <b-tr>
           <b-th colspan="2">
             title
@@ -301,7 +319,7 @@
             Type 1
           </b-th>
         </b-tr>
-      </template>
+      </template> -->
 
       <template v-slot:table-busy>
         <div class="text-center text-danger my-2">
@@ -313,6 +331,7 @@
         검색결과 총 {{ totalCount }}건
       </template>
     </b-table>
+
     <div>
       <b-pagination-nav
         v-model="page"
@@ -369,31 +388,51 @@
       title="고객정보수정"
       v-if="selectedReceiverData"
     >
-      <b-form-group>
+      <b-form-group
+        label-cols-sm="2"
+        label-cols-lg="2"
+        label="수령자"
+      >
         <b-form-input
           placeholder="수령자"
           v-model="selectedReceiverData.receiver"
         />
       </b-form-group>
-      <b-form-group>
+      <b-form-group
+        label-cols-sm="2"
+        label-cols-lg="2"
+        label="주소"
+      >
         <b-form-input
           placeholder="주소"
           v-model="selectedReceiverData.address"
         />
       </b-form-group>
-      <b-form-group>
+      <b-form-group
+        label-cols-sm="2"
+        label-cols-lg="2"
+        label="전화번호1"
+      >
         <b-form-input
           placeholder="전화번호1"
           v-model="selectedReceiverData.phone_1"
         />
       </b-form-group>
-      <b-form-group>
+      <b-form-group
+        label-cols-sm="2"
+        label-cols-lg="2"
+        label="전화번호2"
+      >
         <b-form-input
           placeholder="전화번호2"
           v-model="selectedReceiverData.phone_2"
         />
       </b-form-group>
-      <b-form-group>
+      <b-form-group
+        label-cols-sm="2"
+        label-cols-lg="2"
+        label="송장번호"
+      >
         <b-form-input
           placeholder="송장번호"
           v-model="selectedReceiverData.delivery_code"
@@ -489,8 +528,16 @@ export default {
           label: "전화번호2",
         },
         {
+          key: "delivery_provider",
+          label: "배송사",
+        },
+        {
           key: "status.name",
           label: "배송상태",
+        },
+        {
+          key: "delivery_code",
+          label: "송장번호",
         },
         {
           key: "delievery",
@@ -503,7 +550,9 @@ export default {
       totalPrice: 0,
       selectedRows: [],
       order_status: [],
-      selectedReceiverData: null
+      selectedReceiverData: null,
+      formDate: "all",
+      selectAll: false,
     }
   },
   watch: {
@@ -585,7 +634,7 @@ export default {
         this.form.edate = null
         break
       }
-      
+      //this.formDate = duration
     },
     linkGen(pageNum) {
       return `?page=${pageNum}`
@@ -760,6 +809,12 @@ export default {
         //
         }
       }
+    },
+    toggleSelectAll(){
+      this.selectAll = !this.selectAll
+      this.selectAll ? this.$refs.orders_table.selectAllRows() : this.$refs.orders_table.clearSelected()
+      // this.selectedRows = this.selectAll ? this.orders : []
+      // this.$refs.orders_table.refresh()
     }
   }
 }

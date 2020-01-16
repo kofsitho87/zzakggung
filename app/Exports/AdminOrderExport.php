@@ -114,7 +114,7 @@ class AdminOrderExport implements FromQuery, WithMapping, WithHeadings
         // }
 
         $order = $this->order_by == 1 ? 'ASC' : 'DESC';
-        $query->orderBy('id', $order)->take($this->count);
+        $query->limit($this->count)->orderBy('id', $order);
 
         return $query;
     }
@@ -149,8 +149,8 @@ class AdminOrderExport implements FromQuery, WithMapping, WithHeadings
     /**
     * @return \Illuminate\Support\Collection
     */
-    public function collection()
-    {
-        return Order::all();
-    }
+    // public function collection()
+    // {
+    //     return Order::all();
+    // }
 }

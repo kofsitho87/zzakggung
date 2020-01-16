@@ -15,6 +15,11 @@ class User extends Authenticatable
 
     protected $hidden = ['password', 'remember_token'];
 
+    public function isAdmin()
+    {
+        return $this->is_admin;
+    }
+
     public function orders()
     {
         return $this->hasMany('\App\Model\Order', 'user_id')->with('product');

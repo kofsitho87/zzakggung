@@ -26,6 +26,19 @@ class AdminController extends BaseController
         $data = compact('shopTypes');
         return $this->sendResponse($data, '');
     }
+    public function deliveryProviders(Request $request)
+    {
+        $providers = DeliveryProvider::all();
+        $delivery_providers = [];
+
+        foreach($providers as $provider)
+        {
+            $delivery_providers[$provider->id] = $provider->name;
+        }
+
+        $data = compact('providers', 'delivery_providers');
+        return $this->sendResponse($data, '');
+    }
 
     public function users(Request $request)
     {
@@ -38,6 +51,37 @@ class AdminController extends BaseController
     {
         $data = compact('user');
         return $this->sendResponse($data, '');
+    }
+
+    public function updateUser(Request $request, User $user)
+    {
+        $credentials = $request->only('name', 'user_id', 'shop_type_id');
+        $rules = [
+            'name' => 'required',
+            'user_id' => 'required',
+            'shop_type_id' => 'required',
+        ];
+        $messages = [
+            'name.required'  => '필수값입니다.',
+            'user_id.required'  => '필수값입니다.',
+            'shop_type_id.required'  => '필수값입니다.'
+        ];
+        $validator = Validator::make($credentials, $rules, $messages);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_UPDATE_USER', $messages);
+        }
+
+        $user->name = $request->name;
+        $user->user_id = $request->user_id;
+        $user->shop_type_id = $request->shop_type_id;
+
+        if( ! $user->save() )
+        {
+            return $this->sendError('FAILED_UPDATE_USER');
+        }
+        return $this->sendResponse([]);
     }
 
     public function userTrades(Request $request, User $user)
@@ -73,6 +117,71 @@ class AdminController extends BaseController
         $total_minus_price    = $user->tradeTotalMinusPrice();
 
         $data = compact('trades', 'user', 'total_plus_price', 'total_availble_price', 'total_minus_price', 'read_trades');
+        return $this->sendResponse($data, '');
+    }
+
+    public function addUserTrade(Request $request, User $user)
+    {
+        $credentials = $request->only('is_plus', 'price', 'content');
+        $rules = [
+            'is_plus'    => 'required|bool',
+            'price'      => 'required|integer',
+            'content'    => 'required'
+        ];
+        $validator = Validator::make($credentials, $rules);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_ADD_USER_TRADE', $messages);
+        }
+
+        $trade = new Trade;
+        $trade->user_id = $user->id;
+        $trade->is_plus = $request->is_plus;
+        $trade->price   = (int)$request->price;
+        $trade->content = $request->content;
+
+        if( ! $trade->save() )
+        {
+            return $this->sendError('FAILED_ADD_USER_TRADE');
+        }
+        
+        $data = compact('trade');
+        return $this->sendResponse($data, '');
+    }
+
+    public function deleteUserTrades(Request $request, User $user)
+    {
+        $credentials = $request->only('trades');
+        $rules = [
+            'trades.*'    => 'required',
+        ];
+        $validator = Validator::make($credentials, $rules);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_DELETE_USER_TRADE', $messages);
+        }
+
+        if( !$request->trades || !is_array($request->trades) )
+        {
+            return $this->sendError('FAILED_DELETE_USER_TRADE', ['삭제할 내역이 없음']);
+        }
+
+        foreach($request->trades as $row)
+        {
+            if( $trade = Trade::find($row) )
+            {
+                $trade->delete();
+            }
+        }
+
+        return $this->sendResponse([]);
+    }
+
+    public function order(Request $request, Order $order)
+    {
+        $data = compact('order');
         return $this->sendResponse($data, '');
     }
 
@@ -171,6 +280,35 @@ class AdminController extends BaseController
 
         $data = compact('orders', 'delivery_status', 'sdate', 'edate', 'keyword_options', 'keyword_option', 'keyword', 'order_by', 'page_counts', 'count', 'total_price', 'order_status');
         return $this->sendResponse($data, '');
+    }
+
+    public function updateOrder(Request $request, Order $order)
+    {
+        $credentials = $request->only('delivery_status', 'minus_price', 'delivery_provider', 'delivery_code', 'comment');
+        $rules = [
+            'delivery_status' => 'required'
+        ];
+        $messages = [
+            'delivery_status.required'  => '필수값입니다.'
+        ];
+        $validator = Validator::make($credentials, $rules, $messages);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_UPDATE_ORDER', $messages);
+        }
+
+        $order->delivery_status   = $request->delivery_status;
+        $order->minus_price       = $request->minus_price;
+        $order->delivery_provider = $request->delivery_provider;
+        $order->delivery_code     = $request->delivery_code;
+        $order->comment           = $request->comment;
+
+        if( ! $order->save() )
+        {
+            return $this->sendError('FAILED_UPDATE_ORDER');
+        }
+        return $this->sendResponse([]);
     }
 
     public function updateOrders(Request $request)
@@ -292,5 +430,34 @@ class AdminController extends BaseController
         }
 
         return (new AdminOrderExport($delivery_status, $sdate, $edate, $keyword_option, $keyword, $order_by, $count))->download('관리자주문내역.xlsx');
+    }
+
+
+    public function products(Request $request)
+    {
+        $keyword_options = ['전체', '모델번호', '상품이름'];
+        $keyword = trim($request->keyword);
+        $keyword_option  = trim($request->keyword_option);
+
+        $query = Product::query()->with("prices.shop_type");
+
+        if( $request->keyword /*&& $request->keyword_option*/ )
+        {
+            // $option = $request->keyword_option == 1 ? 'model_id' : ($request->keyword_option == 2 ? 'name' : '');
+            // $query->where($option, $keyword);
+            $query->where("model_id", $keyword)->orWhere("name", $keyword);
+        }
+
+        $products = $query->paginate();
+
+        $data = compact('products');
+        return $this->sendResponse($data);
+    }
+
+    public function product(Request $request, Product $product)
+    {
+        //$product = with("prices.shop_type")
+        $data = compact('product');
+        return $this->sendResponse($data, '');
     }
 }

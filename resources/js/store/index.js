@@ -1,5 +1,6 @@
 import Vue from "vue"
 import Vuex from "vuex"
+import createPersistedState from "vuex-persistedstate"
 
 Vue.use(Vuex)
 
@@ -13,10 +14,10 @@ export default new Vuex.Store({
     admin
   },
   plugins: [
-    // createPersistedState({
-    //   key: "chatRooms",
-    //   paths: ["chat.chatRooms"],
-    //   storage: window.localStorage
-    // })
+    createPersistedState({
+      key: "auth",
+      paths: ["auth.user"],
+      storage: window.localStorage
+    })
   ]
 })
