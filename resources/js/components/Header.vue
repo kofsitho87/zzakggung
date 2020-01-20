@@ -4,43 +4,67 @@
     type="light"
     variant="info"
   >
-    <b-navbar-brand href="#">
+    <b-navbar-brand to="/admin">
       도매신 관리자
     </b-navbar-brand>
 
-    <b-navbar-toggle target="nav-collapse" />
-    <b-collapse
-      id="nav-collapse"
-      is-nav
+    <div
+      v-if="!isAuthenticated"
+      class="flex-grow-1"
     >
       <b-navbar-nav>
-        <b-nav-item :to="{name: 'AdminUsers'}">
-          거래처관리
-        </b-nav-item>
-        <b-nav-item :to="{name: 'AdminOrders'}">
-          주문내역관리
-        </b-nav-item>
-        <b-nav-item :to="{name: 'AdminProducts'}">
-          상품관리
+        <b-nav-item href="/">
+          홈
         </b-nav-item>
       </b-navbar-nav>
+    </div>
+    <div
+      v-else
+      class="flex-grow-1"
+    >
+      <b-navbar-toggle target="nav-collapse" />
+      <b-collapse
+        id="nav-collapse"
+        is-nav
+      >
+        <b-navbar-nav>
+          <b-nav-item href="/">
+            홈
+          </b-nav-item>
+          <b-nav-item :to="{name: 'AdminUsers'}">
+            거래처관리
+          </b-nav-item>
+          <b-nav-item :to="{name: 'AdminOrders'}">
+            주문내역관리
+          </b-nav-item>
+          <b-nav-item :to="{name: 'AdminProducts'}">
+            상품관리
+          </b-nav-item>
+          <b-nav-item :to="{name: 'AdminShopTypes'}">
+            거채처타입관리
+          </b-nav-item>
+          <b-nav-item :to="{name: 'AdminNotice'}">
+            공지사항
+          </b-nav-item>
+        </b-navbar-nav>
 
-      <!-- Right aligned nav items -->
-      <b-navbar-nav class="ml-auto">
-        <b-nav-item-dropdown right>
-          <!-- Using 'button-content' slot -->
-          <template v-slot:button-content>
-            <em>{{ user.name }}</em>
-          </template>
-          <b-dropdown-item href="#">
+        <!-- Right aligned nav items -->
+        <b-navbar-nav class="ml-auto">
+          <b-nav-item-dropdown right>
+            <!-- Using 'button-content' slot -->
+            <template v-slot:button-content>
+              <em>{{ user.name }}</em>
+            </template>
+            <!-- <b-dropdown-item href="#">
             비밀번호 변경
-          </b-dropdown-item>
-          <b-dropdown-item @click="logoutAction">
-            로그아웃
-          </b-dropdown-item>
-        </b-nav-item-dropdown>
-      </b-navbar-nav>
-    </b-collapse>
+          </b-dropdown-item> -->
+            <b-dropdown-item @click="logoutAction">
+              로그아웃
+            </b-dropdown-item>
+          </b-nav-item-dropdown>
+        </b-navbar-nav>
+      </b-collapse>
+    </div>
   </b-navbar>
 </template>
 
@@ -54,6 +78,9 @@ export default {
   computed: {
     user(){
       return this.$store.getters.user
+    },
+    isAuthenticated(){
+      return this.$store.getters.isAuthenticated
     }
   },
   methods: {

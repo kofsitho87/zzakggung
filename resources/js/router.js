@@ -16,6 +16,11 @@ import AdminOrder from "./pages/admin/Order"
 
 import AdminProducts from "./pages/admin/Products"
 import AdminProduct from "./pages/admin/Product"
+import AdminCreateProduct from "./pages/admin/CreateProduct"
+
+import AdminShopTypes from "./pages/admin/ShopTypes"
+
+import AdminNotice from "./pages/admin/Notice"
 
 const requireAuth = (to, from, next) => {
   if (store.getters.isAuthenticated) return next()
@@ -43,7 +48,7 @@ const router = new VueRouter({
       },
       children: [
         {
-          path: "users",
+          path: "/",
           component: AdminUsers,
           name: "AdminUsers",
           meta: {
@@ -91,11 +96,35 @@ const router = new VueRouter({
           }
         },
         {
+          path: "products/create",
+          component: AdminCreateProduct,
+          name: "AdminCreateProduct",
+          meta: {
+            title: "상품생성"
+          }
+        },
+        {
           path: "products/:id",
           component: AdminProduct,
           name: "AdminProduct",
           meta: {
             title: "상품상세"
+          }
+        },
+        {
+          path: "shop_types",
+          component: AdminShopTypes,
+          name: "AdminShopTypes",
+          meta: {
+            title: "거래처타입관리"
+          }
+        },
+        {
+          path: "notice",
+          component: AdminNotice,
+          name: "AdminNotice",
+          meta: {
+            title: "공지사항"
           }
         },
       ]

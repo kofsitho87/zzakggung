@@ -10,6 +10,21 @@ const mutations = {
   SET_SHOP_TYPES(state, shopTypes) {
     state.shopTypes = shopTypes
   },
+  CREATE_SHOP_TYPE(state, shopType) {
+    state.shopTypes = [...state.shopTypes, shopType]
+  },
+  UPDATE_SHOP_TYPE(state, shopType) {
+    let index = state.shopTypes.findIndex(row => row.id == shopType.id)
+    if(index > -1){
+      state.shopTypes[index] = shopType
+    }
+  },
+  DELETE_SHOP_TYPE(state, shopType) {
+    let index = state.shopTypes.findIndex(row => row.id == shopType.id)
+    if(index > -1){
+      state.shopTypes.splice(index, 1)
+    }
+  },
   SET_DELIVERY_PROVIDERS(state, deliveryProviders) {
     state.deliveryProviders = deliveryProviders
   }
@@ -60,12 +75,13 @@ const actions = {
   async getShopTypes({commit}){
     try {
       let {data} = await axios.get("/admin/config/shopTypes")
-      let shopTypes = data.data.shopTypes.map(row => {
-        return {
-          text: row.type,
-          value: row.id
-        }
-      })
+      // let shopTypes = data.data.shopTypes.map(row => {
+      //   return {
+      //     text: row.type,
+      //     value: row.id
+      //   }
+      // })
+      let shopTypes = data.data.shopTypes
       commit("SET_SHOP_TYPES", shopTypes)
     } catch (e) {
       throw e

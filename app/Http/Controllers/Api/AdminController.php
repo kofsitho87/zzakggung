@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 //use App\Http\Controllers\Api\BaseController as BaseController;
 
 use Validator;
+use DB;
+
 use App\Model\User;
 use App\Model\Order;
 use App\Model\OrderStatus;
@@ -14,6 +16,7 @@ use App\Model\Product;
 use App\Model\ShopType;
 use App\Model\DeliveryProvider;
 use App\Model\Trade;
+use App\Model\Notice;
 
 use App\Exports\AdminOrderExport;
 
@@ -22,7 +25,7 @@ class AdminController extends BaseController
     
     public function shopTypes(Request $request)
     {
-        $shopTypes = ShopType::all();
+        $shopTypes = ShopType::with("status")->get();
         $data = compact('shopTypes');
         return $this->sendResponse($data, '');
     }
@@ -188,7 +191,7 @@ class AdminController extends BaseController
     public function orders(Request $request)
     {
         $keyword = trim($request->keyword);
-        $query = Order::with('status', 'message');
+        $query = Order::with('status', 'message', 'deliveryProvider');
 
         //날짜검색
         if( isset($request->sdate) && isset($request->edate) && !empty($request->sdate) && !empty($request->edate) )
@@ -378,8 +381,9 @@ class AdminController extends BaseController
         $orders = $request->orders;
         foreach($orders as $row)
         {
-            $_order = json_decode($row);
-            if( $order = Order::find($_order->id) )
+            //print_r($row);
+            // $_order = json_decode($row);
+            if( $order = Order::find($row['id']) )
             {
                 if( ! $order->delete() )
                 {
@@ -456,8 +460,288 @@ class AdminController extends BaseController
 
     public function product(Request $request, Product $product)
     {
-        //$product = with("prices.shop_type")
+        $product = Product::with("prices.shop_type")->find($product->id);
         $data = compact('product');
-        return $this->sendResponse($data, '');
+        return $this->sendResponse($data);
+    }
+
+    public function createProduct(Request $request)
+    {
+        $credentials = $request->only('model_id', 'name');
+        $rules = [
+            'model_id' => 'required|unique:products',
+            'name'     => 'required',
+            'prices.*' => 'required|integer'
+        ];
+        $messages = [
+            'model_id.unique' => '모델아이디가 이미 존재합니다.'
+        ];
+        $validator = Validator::make($credentials, $rules, $messages);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_CREATE_PRODUCT', $messages);
+        }
+
+        $product = new Product;
+        $product->model_id = $request->model_id;
+        $product->name     = $request->name;
+
+        if( ! $product->save() )
+        {
+            return $this->sendError('FAILED_CREATE_PRODUCT');
+        }
+
+        foreach($request->prices as $row)
+        {
+            $product->prices()->create([
+                'shop_type_id' => $row['shop_type']['id'],
+                'price'        => $row['price'] ? $row['price'] : 0
+            ]);
+        }
+
+        $data = compact('product');
+        return $this->sendResponse($data);
+    }
+
+    public function updateProduct(Request $request, Product $product)
+    {
+        $credentials = $request->only('name');
+        $rules = [
+            'name'    => 'required',
+            'price.*' => 'required|integer'
+        ];
+        $validator = Validator::make($credentials, $rules);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_UPDATE_PRODUCT', $messages);
+        }
+
+        $product->name = $request->name;
+
+        if( !$product->save() )
+        {
+            return $this->sendError('FAILED_UPDATE_PRODUCT');
+        }
+
+        foreach($request->prices as $row)
+        {
+            if( $priductPrice = $product->prices->where('shop_type_id', $row['shop_type_id'])->first() )
+            {
+                $priductPrice->update([
+                    'price' => $row['price']
+                ]);
+            }
+            else
+            {
+                $product->prices()->create([
+                    'shop_type_id' => $row['shop_type_id'],
+                    'price'        => $row['price']
+                ]);
+            }
+        }
+
+        return $this->sendResponse([]);
+    }
+
+    public function deleteProduct(Request $request, Product $product)
+    {
+        if( ! $product->delete() )
+        {
+            return $this->sendError('FAILED_DELETE_PRODUCT');
+        }
+        return $this->sendResponse([]);
+    }
+
+    public function orderImport(Request $request)
+    {
+        $credentials = $request->only('excel');
+        $rules = [
+            'excel' => 'required|file|mimetypes:application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ];
+        $validator = Validator::make($credentials, $rules);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('PARAM_ERROR', $messages);
+        }
+
+        $orders = \Maatwebsite\Excel\Facades\Excel::toArray(new \App\Imports\OrdersImport,  $request->file('excel'));
+        $_orders = collect($orders[0]);
+        $orders = collect();
+
+        //dd($_orders);
+
+        DB::beginTransaction();
+
+        foreach($_orders as $idx => $row)
+        {
+            if( $idx == 0 ) continue;
+
+            if( ! $order_id = $row[2] ) continue;
+            if( ! $order = Order::find($order_id) ) continue;
+
+            //delivery_provider row[0]
+            //delivery_code row[1]
+            //delivery_message row[15]
+
+            if( ! $delivery_provider = DeliveryProvider::where('name', trim($row[0]))->first() ) continue;
+
+            $order->delivery_provider = $delivery_provider->id;
+            $order->delivery_code     = trim($row[1]);
+
+            if( $order->delivery_provider && $order->delivery_code )
+            {
+                $order->delivery_status = 3;
+            }
+
+            if( $delivery_message = isset($row[15]) )
+            {
+                $order->delivery_message = trim($row[15]);
+            }
+
+            if( ! $order->save() )
+            {
+                DB::rollback();
+                return $this->sendError('ERROR: DB 업데이트 실패');
+            }
+
+            $orders[] = $order;
+        }
+
+        DB::commit();
+
+        if( $orders->count() < 1 )
+        {
+            return $this->sendError('ERROR: 상품등록 갯수가 없습니다.');
+        }
+
+        return $this->sendResponse([]);
+    }
+
+
+    public function createShopType(Request $request)
+    {
+        $credentials = $request->only('type', 'delivery_price', 'delivery_status');
+        $rules = [
+            'type'            => 'required',
+            'delivery_price'  => 'required|integer',
+            'delivery_status' => 'required|integer',
+        ];
+        $validator = Validator::make($credentials, $rules);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('PARAM_ERROR', $messages);
+        }
+        
+        // $shopType = new ShopType;
+        // $shopType->delivery_price = 0; //$request->delivery_price;
+        
+        if( ! $shopType = ShopType::create($credentials) )
+        {
+            return $this->sendError('CREATE_SHOP_TYPE_ERROR');
+        }
+
+        $shopType = ShopType::with("status")->find($shopType->id);
+
+        $data = compact('shopType');
+        return $this->sendResponse($data);
+    }
+
+    public function updateShopType(Request $request, ShopType $shopType)
+    {
+        $credentials = $request->only('delivery_price');
+        $rules = [
+            'delivery_price' => 'required|integer',
+        ];
+        $validator = Validator::make($credentials, $rules);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('PARAM_ERROR', $messages);
+        }
+
+        $shopType->delivery_price = $request->delivery_price;
+        
+        if( ! $shopType->save() )
+        {
+            return $this->sendError('UPDATE_SHOP_TYPE_ERROR');
+        }
+
+        return $this->sendResponse([]);
+    }
+
+    public function deleteShopType(Request $request, ShopType $shopType)
+    {
+        if( ! $shopType->delete() )
+        {
+            return $this->sendError('DELETE_SHOP_TYPE_ERROR');
+        }
+
+        return $this->sendResponse([]);
+    }
+
+    public function notices(Request $request)
+    {
+        $notices = Notice::paginate();
+
+        $data = compact('notices');
+        return $this->sendResponse($data);
+    }
+
+    public function notice(Request $request, Notice $notice)
+    {
+        $data = compact('notice');
+        return $this->sendResponse($data);
+    }
+
+    public function createNotice(Request $request)
+    {
+        $credentials = $request->only('content');
+        $rules = [
+            'content' => 'required',
+        ];
+        $validator = Validator::make($credentials, $rules);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('PARAM_ERROR', $messages);
+        }
+        
+        if( ! $notice = Notice::create($credentials) )
+        {
+            return $this->sendError('CREATE_NOTICE_ERROR');
+        }
+
+        $data = compact('notice');
+        return $this->sendResponse($data);
+    }
+
+    public function updateNotice(Request $request, Notice $notice)
+    {
+        $credentials = $request->only('content');
+        $rules = [
+            'content' => 'required',
+            //'is_active' => "bool"
+        ];
+        $validator = Validator::make($credentials, $rules);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('PARAM_ERROR', $messages);
+        }
+        
+        // $notice->content = $request->content;
+        // $notice->is_active = $request->is_active;
+
+        if( ! $notice->update($credentials) )
+        {
+            return $this->sendError('UPDATE_NOTICE_ERROR');
+        }
+
+        $data = compact('notice');
+        return $this->sendResponse($data);
     }
 }

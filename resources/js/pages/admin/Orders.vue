@@ -172,6 +172,19 @@
           >
             엑셀다운로드
           </b-button>
+          <b-button
+            size="sm"
+            variant="danger"
+            @click="$refs.excel.$el.querySelector('input').click()"
+          >
+            엑셀업로드
+          </b-button>
+          <b-form-file
+            ref="excel"
+            class="d-none"
+            accept=".xlsx"
+            @change="excelUpload"
+          />
         </div>
       </b-form>
     </b-card>
@@ -242,6 +255,21 @@
         <span v-if="data.value.minus">
           (차감금액: {{ $options.filters.comma(data.value.minus) }}원)
         </span>
+      </template>
+      <template v-slot:cell(delivery_provider)="data">
+        {{ data.value.name }}
+      </template>
+      <template v-slot:cell(status)="data">
+        {{ data.value.name }}
+        <b-button
+          v-if="data.value.id == 3"
+          size="sm"
+          variant="outline-success"
+          class="font-size-0 p-0"
+          @click="updateOrderStatus(data.item)"
+        >
+          발송완료
+        </b-button>
       </template>
       <!-- <template v-slot:cell(product)="row">
         <b-button
@@ -532,7 +560,7 @@ export default {
           label: "배송사",
         },
         {
-          key: "status.name",
+          key: "status",
           label: "배송상태",
         },
         {
@@ -741,7 +769,7 @@ export default {
       console.log("saveOrderDelete")
       if( confirm("선택한 주문내역을 정말 삭제하시겠습니까?") ){
         try {
-          await this.$store.dispatch("delete", {
+          await this.$store.dispatch("post", {
             api: "orders",
             payload: {
               orders: this.selectedRows
@@ -815,6 +843,67 @@ export default {
       this.selectAll ? this.$refs.orders_table.selectAllRows() : this.$refs.orders_table.clearSelected()
       // this.selectedRows = this.selectAll ? this.orders : []
       // this.$refs.orders_table.refresh()
+    },
+    async excelUpload(e){
+      let file = e.target.files[0]
+      console.log(file)
+      
+      this.isLoading = true
+      try {
+        await this.$store.dispatch("post", {
+          api: "orders/upload",
+          payload: {
+            excel: file
+          }
+        })
+        this.$notify({
+          group: "top-center",
+          type: "success",
+          title: "파일업로드 성공"
+        })
+        this.getOrders()
+
+      } catch (e){
+        this.$notify({
+          group: "top-center",
+          type: "error",
+          title: e.message
+        })
+      } finally {
+        this.isLoading = false
+      }
+    },
+    async updateOrderStatus(order){
+      const {minus_price, delivery_code, comment, delivery_provider} = order
+
+      this.isLoading = true
+      try {
+        await this.$store.dispatch("put", {
+          api: `orders/${order.id}`,
+          payload: {
+            delivery_status: 4, 
+            minus_price, 
+            delivery_provider: delivery_provider.id, 
+            delivery_code, 
+            comment
+          }
+        })
+        order.status.id = 4
+        order.status.name = "발송완료"
+        this.$notify({
+          group: "top-center",
+          type: "success",
+          title: "주문내역 업데이트 성공"
+        })
+      } catch (e){
+        this.$notify({
+          group: "top-center",
+          type: "error",
+          title: e.message
+        })
+      } finally {
+        this.isLoading = false
+      }
     }
   }
 }

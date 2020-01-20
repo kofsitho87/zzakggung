@@ -16,6 +16,7 @@ class CreateNoticesTable extends Migration
         Schema::create('notices', function (Blueprint $table) {
             $table->increments('id');
             $table->text('content');
+            $table->boolean('is_active')->default(false);
             $table->timestamps();
         });
     }

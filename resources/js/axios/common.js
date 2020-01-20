@@ -12,6 +12,15 @@ const instance = axios.create({
 instance.interceptors.request.use(
   config => {
     config.headers.Authorization = `Bearer ${store.state.auth.user.token}`
+
+    // if (config.method == "post") {
+    //   var formData = new FormData()
+    //   for (let key in config.data) {
+    //     formData.append(key, config.data[key])
+    //   }
+    //   config.data = formData
+    // }
+
     return config
   }
 )

@@ -39,15 +39,41 @@ Route::group(['middleware' => 'jwt.auth', 'prefix' => 'admin'], function(){
     //update order
     Route::put('/orders/{order}', 'Api\AdminController@updateOrder')->where('order', '[0-9]+');
     //delete orders
-    Route::delete('/orders', 'Api\AdminController@deleteOrders');
+    Route::post('/orders', 'Api\AdminController@deleteOrders');
+    //upload orders
+    Route::post('/orders/upload', 'Api\AdminController@orderImport');
 
     //get products
     Route::get('/products', 'Api\AdminController@products');
     //get product
     Route::get('/products/{product}', 'Api\AdminController@product')->where('order', '[0-9]+');
+    //update product
+    Route::put('/products/{product}', 'Api\AdminController@updateProduct')->where('order', '[0-9]+');
+    //delete product
+    Route::delete('/products/{product}', 'Api\AdminController@deleteProduct')->where('order', '[0-9]+');
+    //create product
+    Route::post('/products', 'Api\AdminController@createProduct');
     
     //update order receiver
     Route::put('/orders/{order}/receiver', 'Api\AdminController@updateOrderReceiver')->where('order', '[0-9]+');
+
+    //create shop type
+    Route::post('/shop_types', 'Api\AdminController@createShopType');
+    //update shop type
+    Route::put('/shop_types/{shopType}', 'Api\AdminController@updateShopType')->where('shopType', '[0-9]+');
+    //delete shop type
+    Route::delete('/shop_types/{shopType}', 'Api\AdminController@deleteShopType')->where('shopType', '[0-9]+');
+
+    //create notice
+    Route::post('/notices', 'Api\AdminController@createNotice');
+    //get notices
+    Route::get('/notices', 'Api\AdminController@notices');
+    //get notice
+    Route::get('/notices/{notice}', 'Api\AdminController@notice')->where('notice', '[0-9]+');
+    //update notices
+    Route::put('/notices/{notice}', 'Api\AdminController@updateNotice')->where('notice', '[0-9]+');
+    //delete notices
+    Route::delete('/notices/{notice}', 'Api\AdminController@deleteNotice')->where('notice', '[0-9]+');
 });
 
 Route::post('/auth/login', 'AuthController@login');

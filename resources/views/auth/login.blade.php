@@ -78,6 +78,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function() {
     new Vue({

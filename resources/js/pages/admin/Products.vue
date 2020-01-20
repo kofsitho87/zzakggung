@@ -1,6 +1,6 @@
 <template>
   <div>
-    <b-card header="상품관리">
+    <b-card>
       <b-form @submit.prevent="searchAction">
         <b-form-group>
           <b-form-input
@@ -30,7 +30,8 @@
               v-for="row in data.value"
               :key="row.id"
             >
-              거래처-{{ row.shop_type.type }} {{ $options.filters.comma(row.price) }}원
+              거래처-{{ row.shop_type ? row.shop_type.type : '없음' }} 
+              {{ $options.filters.comma(row.price) }}원
             </b-list-group-item>
           </b-list-group>
         </template>
@@ -47,6 +48,17 @@
         </template>
       </b-table>
 
+      <template v-slot:header>
+        상품관리
+        <b-button
+          class="float-right"
+          variant="primary"
+          size="sm"
+          :to="{name: 'AdminCreateProduct'}"
+        >
+          상품생성
+        </b-button>
+      </template>
       <template v-slot:footer>
         <!-- <b-pagination
           v-model="page"
@@ -73,7 +85,7 @@ export default {
   data(){
     return {
       keyword: null,
-      page: 1,
+      page: this.$route.query.page || 1,
       fields: [
         {
           key: "id",
@@ -123,6 +135,10 @@ export default {
             page: this.page,
             keyword: this.keyword
           }
+        })
+        let list = products.data.map(row => {
+          row.prices = row.prices.filter(item => item.shop_type)
+          return row
         })
         this.items = products.data
         this.total = products.total
