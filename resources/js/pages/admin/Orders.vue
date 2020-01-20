@@ -633,6 +633,8 @@ export default {
       }
     },
     searchAction(){
+      //this.$router.replace("/admin/orders?page=1")
+      this.page = 1
       this.getOrders()
     },
     setFormDate(duration){
