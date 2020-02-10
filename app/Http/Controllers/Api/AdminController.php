@@ -353,8 +353,8 @@ class AdminController extends BaseController
                     $trade = new Trade;
                     $trade->user_id = $order->user->id;
                     $trade->is_plus = true;
-                    $trade->price   = $order->product->price($order->user->shop_type_id) * $order->qty;
-                    $trade->content = "주문번호: " . $order->id . "번의 반품으로 인한 사용가능적립금 추가";
+                    $trade->price   = $request->refund; //$order->product->price($order->user->shop_type_id) * $order->qty;
+                    $trade->content = "주문번호: " . $order->id . "번 수취인:" . $order->receiver . " 의 반품으로 인한 사용가능적립금 추가";
                     if( ! $trade->save() )
                     {
                         return $this->sendError('FAILED_UPDATE_ORDERS');
@@ -402,6 +402,7 @@ class AdminController extends BaseController
         $order->phone_1 = $request->phone_1;
         $order->phone_2 = $request->phone_2;
         $order->delivery_code = $request->delivery_code;
+        $order->zipcode = $request->zipcode;
         if( !$order->save() )
         {
             return $this->sendError('FAILED_UPDATE_ORDER_RECEIVER');

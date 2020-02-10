@@ -367,7 +367,7 @@ class AdminController extends Controller
                         $trade->user_id = $order->user_id;
                         $trade->is_plus = true;
                         $trade->price   = $order->product->price($order->user->shop_type_id) * $order->qty;
-                        $trade->content = "주문번호: " . $order->id . "번의 반품으로 인한 사용가능적립금 추가";
+                        $trade->content = "주문번호: " . $order->id . "번 수취인:" . $order->receiver . " 의 반품으로 인한 사용가능적립금 추가";
                         if( ! $trade->save() )
                         {
                             return redirect()->back()->withErrors(['DB ERROR : 반품완료일때 업체에게 사용가능적립금 추가 실패']);

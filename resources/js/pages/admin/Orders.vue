@@ -128,7 +128,7 @@
         <b-form-group
           label-cols-sm="2"
           label-cols-lg="2"
-          label="페이지검색갯수"
+          label="페이지검색개수"
         >
           <b-form-select
             v-model="form.count"
@@ -192,7 +192,7 @@
       <b-button
         variant="outline-success"
         size="sm"
-        :disabled="selectedRows.length < 1"
+        :disabled="selectedRowsCount < 1"
         v-b-modal.order_status_modal
       >
         주문상태일괄변경
@@ -200,7 +200,7 @@
       <b-button
         variant="outline-secondary"
         size="sm"
-        :disabled="selectedRows.length < 1"
+        :disabled="selectedRowsCount < 1"
         v-b-modal.order_comment_modal
       >
         참고사항일괄변경
@@ -208,157 +208,27 @@
       <b-button
         variant="outline-danger"
         size="sm"
-        :disabled="selectedRows.length < 1"
+        :disabled="selectedRowsCount < 1"
         @click="saveOrderDeletes"
       >
         주문내역일괄삭제
       </b-button>
     </div>
-    <b-table
+    
+    <OrderListSimpleGroup
       ref="orders_table"
-      class="orders_table"
-      caption-top
-      bordered
-      hover
-      :sticky-header="false"
-      :fields="fields"
       :items="orders"
-      :busy="isLoading"
-      :selectable="true"
-      select-mode="multi"
-      :foot-clone="false"
-      @row-selected="onRowSelected"
-    >
-      <template v-slot:cell(index)="data">
-        {{ (currentPage-1) * perPage + (data.index + 1) }}
-        <b-button
-          class="font-size-1"
-          size="sm"
-          variant="info"
-          @click="showChangeReceiverModal(data.index)"
-        >
-          고객정보수정
-        </b-button>
-      </template>
-      <template v-slot:cell(id)="data">
-        <router-link :to="{name: 'AdminOrder', params: {id: data.value}}">
-          {{ data.value }}
-        </router-link>
-      </template>
-      <template v-slot:cell(user)="data">
-        <router-link :to="{name: 'AdminUser', params: {id: data.value.id}}">
-          <b class="text-info">{{ data.value.name }}</b>
-        </router-link>
-      </template>
-      <template v-slot:cell(total_price)="data">
-        {{ $options.filters.comma(data.value.price) }}원
-        <span v-if="data.value.minus">
-          (차감금액: {{ $options.filters.comma(data.value.minus) }}원)
-        </span>
-      </template>
-      <template v-slot:cell(delivery_provider)="data">
-        {{ data.value.name }}
-      </template>
-      <template v-slot:cell(status)="data">
-        {{ data.value.name }}
-        <b-button
-          v-if="data.value.id == 3"
-          size="sm"
-          variant="outline-success"
-          class="font-size-0 p-0"
-          @click="updateOrderStatus(data.item)"
-        >
-          발송완료
-        </b-button>
-      </template>
-      <!-- <template v-slot:cell(product)="row">
-        <b-button
-          size="sm"
-          @click="row.toggleDetails"
-        >
-          {{ row.detailsShowing ? 'Hide' : 'Show' }} Details
-        </b-button>
-      </template> -->
-      <template v-slot:cell(delievery)="row">
-        <b-button
-          size="sm"
-          @click="row.toggleDetails"
-        >
-          {{ row.detailsShowing ? 'hide' : 'show' }}
-        </b-button>
-      </template>
-      <template v-slot:row-details="row">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>배송메세지</th>
-              <th>참고사항</th>
-              <th>교환/반품메세지</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>{{ row.item.delivery_message }}</td>
-              <td>{{ row.item.comment }}</td>
-              <td>{{ row.item.message ? row.item.message.content : null }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </template>
-
-      <template v-slot:thead-top>
-        <b-tr>
-          <b-th
-            colspan="2"
-            variant="primary"
-          >
-            <b-button
-              type="button"
-              variant="success"
-              size="sm"
-              @click="toggleSelectAll"
-            >
-              전체{{ selectAll ? '해제' : '선택' }}
-            </b-button>
-          </b-th>
-          <b-th
-            colspan="2"
-            variant="primary"
-          >
-            총합계액
-          </b-th>
-          <b-th
-            variant="primary"
-            colspan="14"
-          >
-            {{ $options.filters.comma(totalPrice) }}원
-          </b-th>
-        </b-tr>
-      </template>
-      <!-- <template v-slot:tfoot>
-        <b-tr>
-          <b-th colspan="2">
-            title
-          </b-th>
-          <b-th
-            colspan="14"
-            variant="secondary"
-          >
-            Type 1
-          </b-th>
-        </b-tr>
-      </template> -->
-
-      <template v-slot:table-busy>
-        <div class="text-center text-danger my-2">
-          <b-spinner class="align-middle" />
-          <strong>Loading...</strong>
-        </div>
-      </template>
-      <template v-slot:table-caption>
-        검색결과 총 {{ totalCount }}건
-      </template>
-    </b-table>
+      :fields="fields"
+      :total-count="totalCount"
+      :total-price="totalPrice"
+      :is-loading="isLoading"
+      :page="page"
+      :per-page="perPage"
+      :is-selected-all="isSelectedAll"
+      @toggleSelectAll="toggleSelectAll"
+      @onRowSelected="onRowSelected"
+      @showChangeReceiverModal="showChangeReceiverModal"
+    />
 
     <div>
       <b-pagination-nav
@@ -369,6 +239,13 @@
       />
     </div>
 
+    <b-spinner
+      variant="primary"
+      label="Loading..."
+      class="spinner"
+      v-if="isLoading"
+    />
+
     <b-modal
       id="order_status_modal"
       ref="order_status_modal"
@@ -378,6 +255,16 @@
         <b-form-select
           v-model="form.order_status"
           :options="order_status"
+        />
+      </div>
+      <div
+        v-if="form.order_status == 7"
+        class="mt-2"
+      >
+        <b-form-input
+          type="number"
+          v-model="form.refund"
+          placeholder="환불금액"
         />
       </div>
       <template v-slot:modal-footer>
@@ -439,6 +326,16 @@
       <b-form-group
         label-cols-sm="2"
         label-cols-lg="2"
+        label="우편번호"
+      >
+        <b-form-input
+          placeholder="우편번호"
+          v-model="selectedReceiverData.zipcode"
+        />
+      </b-form-group>
+      <b-form-group
+        label-cols-sm="2"
+        label-cols-lg="2"
         label="전화번호1"
       >
         <b-form-input
@@ -480,7 +377,11 @@
 
 <script>
 import moment from "moment"
+import OrderListSimpleGroup from "../../components/OrderListSimpleGroup"
 export default {
+  components: {
+    OrderListSimpleGroup
+  },
   data(){
     return {
       form: {
@@ -492,11 +393,11 @@ export default {
         keyword: null,
         count: 0,
         order_status: 0,
-        comment: null
+        comment: null,
+        refund: 0
       },
       page: 1,
       totalPage: 1,
-      currentPage: 0,
       perPage: 0,
       fields: [
         {
@@ -560,12 +461,16 @@ export default {
           label: "배송사",
         },
         {
+          key: "delivery_code",
+          label: "송장번호",
+        },
+        {
           key: "status",
           label: "배송상태",
         },
         {
-          key: "delivery_code",
-          label: "송장번호",
+          key: "comment",
+          label: "참고사항",
         },
         {
           key: "delievery",
@@ -580,7 +485,7 @@ export default {
       order_status: [],
       selectedReceiverData: null,
       formDate: "all",
-      selectAll: false,
+      isSelectedAll: false,
     }
   },
   watch: {
@@ -589,8 +494,14 @@ export default {
       this.getOrders()
     }
   },
+  computed: {
+    selectedRowsCount(){
+      return this.orders.filter(order => order.selected).length
+    }
+  },
   mounted(){
-    this.page = this.$route.query.page || 1
+    let page = this.$route.query.page || 1
+    this.page = parseInt(page)
     this.getOrders()
   },
   methods: {
@@ -615,6 +526,7 @@ export default {
             price: item.product_price * item.qty + item.delivery_price - item.minus_price,
             minus: item.minus_price
           }
+          item.seleced = false
           return item
         })
         this.totalCount = orders.total
@@ -669,8 +581,14 @@ export default {
     linkGen(pageNum) {
       return `?page=${pageNum}`
     },
-    onRowSelected(rows){
-      this.selectedRows = rows
+    onRowSelected(item){
+      item.selected = !item.selected
+      this.orders = this.orders.map(order => {
+        if(order.id == item.id){
+          return item
+        }
+        return order
+      })
     },
     excelDownload(){
       let payload = {
@@ -701,6 +619,7 @@ export default {
           api: "orders",
           payload: {
             delivery_status: this.form.order_status,
+            refund: this.form.refund,
             orders: this.selectedRows
           }
         })
@@ -800,10 +719,8 @@ export default {
         }
       }
     },
-    showChangeReceiverModal(orderIndex){
-      console.log(orderIndex)
-      let currentOrder = this.orders[orderIndex]
-      this.selectedReceiverData = Object.assign({}, currentOrder)
+    showChangeReceiverModal(order){
+      this.selectedReceiverData = Object.assign({}, order)
       this.$nextTick(() => {
         this.$refs.order_receiver_change.show()
       }) 
@@ -841,8 +758,12 @@ export default {
       }
     },
     toggleSelectAll(){
-      this.selectAll = !this.selectAll
-      this.selectAll ? this.$refs.orders_table.selectAllRows() : this.$refs.orders_table.clearSelected()
+      this.isSelectedAll = !this.isSelectedAll
+      this.orders = this.orders.map(order => {
+        order.selected = this.isSelectedAll
+        return order
+      })
+      //this.selectAll ? this.$refs.orders_table.selectAllRows() : this.$refs.orders_table.clearSelected()
       // this.selectedRows = this.selectAll ? this.orders : []
       // this.$refs.orders_table.refresh()
     },
@@ -912,6 +833,14 @@ export default {
 </script>
 
 <style>
+.spinner {
+  position: fixed;
+  left: 50%;
+  top:45%;
+}
+table.orders_table tr.selected {
+  background-color: #dfdfdf;
+}
 table.orders_table th, table.orders_table td {
   font-size: 0.7rem;
 }
