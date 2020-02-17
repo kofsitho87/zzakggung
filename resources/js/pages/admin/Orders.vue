@@ -615,31 +615,31 @@ export default {
     async saveOrderStatus(){
       console.log("saveOrderStatus")
       try {
+        let orders = this.orders.filter(row => row.selected)
         await this.$store.dispatch("put", {
           api: "orders",
           payload: {
             delivery_status: this.form.order_status,
             refund: this.form.refund,
-            orders: this.selectedRows
+            orders
           }
         })
+        let orderStatus = this.order_status.find(row => row.value == this.form.order_status)
+        console.log(orderStatus)
+        this.orders = this.orders.map(row => {
+          if(row.selected){
+            row.status.name = orderStatus.text
+            row.status.id = parseInt(orderStatus.value)
+          }
+          return row
+        })
+        
         this.$notify({
           group: "top-center",
           type: "success",
           title: "주문상태 업데이트 성공"
         })
         this.$refs.order_status_modal.hide()
-
-        this.orders = this.orders.map(row => {
-          if( this.selectedRows.find(item => item.id == row.id) ){
-            let orderStatus = this.order_status.find(status => status.value == this.form.order_status)
-            row.status = {
-              id: orderStatus.value,
-              name: orderStatus.text
-            }
-          }
-          return row
-        })
         this.form.order_status = 0
       } catch (e){
         this.$notify({
@@ -659,7 +659,7 @@ export default {
           api: "orders",
           payload: {
             comment: this.form.comment,
-            orders: this.selectedRows
+            orders: this.orders
           }
         })
         this.$notify({
@@ -669,12 +669,12 @@ export default {
         })
         this.$refs.order_comment_modal.hide()
 
-        this.orders = this.orders.map(row => {
-          if( this.selectedRows.find(item => item.id == row.id) ){
-            row.comment = this.form.comment
-          }
-          return row
-        })
+        // this.orders = this.orders.map(row => {
+        //   if( this.selectedRows.find(item => item.id == row.id) ){
+        //     row.comment = this.form.comment
+        //   }
+        //   return row
+        // })
         this.form.comment = null
       } catch (e){
         this.$notify({
