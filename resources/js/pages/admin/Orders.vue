@@ -659,7 +659,7 @@ export default {
           api: "orders",
           payload: {
             comment: this.form.comment,
-            orders: this.orders
+            orders: this.orders.filter(order => order.selected)
           }
         })
         this.$notify({
@@ -669,6 +669,12 @@ export default {
         })
         this.$refs.order_comment_modal.hide()
 
+        this.orders = this.orders.map(order => {
+          if(order.selected){
+            order.comment = this.form.comment
+          }
+          return order
+        })
         // this.orders = this.orders.map(row => {
         //   if( this.selectedRows.find(item => item.id == row.id) ){
         //     row.comment = this.form.comment
@@ -690,10 +696,11 @@ export default {
       console.log("saveOrderDelete")
       if( confirm("선택한 주문내역을 정말 삭제하시겠습니까?") ){
         try {
+          let deleteOrders = this.orders.filter(order => order.selected)
           await this.$store.dispatch("post", {
             api: "orders",
             payload: {
-              orders: this.selectedRows
+              orders: deleteOrders
             }
           })
           this.$notify({
@@ -702,12 +709,7 @@ export default {
             title: "주문내역 삭제 성공"
           })
 
-          this.orders = this.orders.filter(row => {
-            if( this.selectedRows.find(item => item.id == row.id) ){
-              return false
-            }
-            return true
-          })
+          this.orders = this.orders.filter(order => !order.selected)
         } catch (e){
           this.$notify({
             group: "top-center",
@@ -740,11 +742,20 @@ export default {
           this.$refs.order_receiver_change.hide()
 
           let orderIndex = this.orders.findIndex(order => order.id == this.selectedReceiverData.id)
+          
           if(orderIndex > -1){
-            this.orders[orderIndex] = this.selectedReceiverData
+            console.log(this.selectedReceiverData)
+            let currentOrder = this.orders[orderIndex]
+            currentOrder.receiver = this.selectedReceiverData.receiver
+            currentOrder.phone_1 = this.selectedReceiverData.phone_1
+            currentOrder.phone_2 = this.selectedReceiverData.phone_2
+            currentOrder.zipcode = this.selectedReceiverData.zipcode
+            currentOrder.address = this.selectedReceiverData.address
+            currentOrder.delivery_code = this.selectedReceiverData.delivery_code
+            this.orders[orderIndex] = currentOrder
+            //this.orders[orderIndex] = this.selectedReceiverData
           }
           this.selectedReceiverData = null
-          this.$refs.orders_table.refresh()
 
         } catch (e){
           this.$notify({
