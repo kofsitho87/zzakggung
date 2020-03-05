@@ -19,8 +19,8 @@ import AdminProduct from "./pages/admin/Product"
 import AdminCreateProduct from "./pages/admin/CreateProduct"
 
 import AdminShopTypes from "./pages/admin/ShopTypes"
-
 import AdminNotice from "./pages/admin/Notice"
+import AdminDB from "./pages/admin/DB"
 
 const requireAuth = (to, from, next) => {
   if (store.getters.isAuthenticated) return next()
@@ -125,6 +125,14 @@ const router = new VueRouter({
           name: "AdminNotice",
           meta: {
             title: "공지사항"
+          }
+        },
+        {
+          path: "db",
+          component: AdminDB,
+          name: "AdminDB",
+          meta: {
+            title: "디비관리자"
           }
         },
       ]

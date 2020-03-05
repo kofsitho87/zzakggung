@@ -47,6 +47,9 @@
           <b-nav-item :to="{name: 'AdminNotice'}">
             공지사항
           </b-nav-item>
+          <!-- <b-nav-item :to="{name: 'AdminDB'}">
+            디비관리자
+          </b-nav-item> -->
         </b-navbar-nav>
 
         <!-- Right aligned nav items -->
