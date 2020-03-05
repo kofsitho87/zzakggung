@@ -45,7 +45,7 @@ class AdminOrderExport implements FromQuery, WithMapping, WithHeadings
             '옵션',
             '수량',
 
-            '상품가격',
+            '제품합계액',
             '배송비',
 
             '거래처명',

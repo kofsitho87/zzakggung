@@ -2,7 +2,8 @@
   <b-navbar
     toggleable="lg"
     type="light"
-    variant="info"
+    variant="white"
+    class="border"
   >
     <b-navbar-brand to="/admin">
       도매신 관리자

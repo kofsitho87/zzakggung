@@ -45,35 +45,35 @@
             v-model="form.edate"
           >
           <b-button
-            variant="info"
+            variant="outline-primary"
             size="sm"
             @click="setFormDate('today')"
           >
             오늘
           </b-button>
           <b-button
-            variant="info"
+            variant="outline-primary"
             size="sm"
             @click="setFormDate('yesterday')"
           >
             어제
           </b-button>
           <b-button
-            variant="info"
+            variant="outline-primary"
             size="sm"
             @click="setFormDate('week')"
           >
             이번주
           </b-button>
           <b-button
-            variant="info"
+            variant="outline-primary"
             size="sm"
             @click="setFormDate('month')"
           >
             이번달
           </b-button>
           <b-button
-            variant="info"
+            variant="outline-primary"
             size="sm"
             @click="setFormDate('all')"
           >
