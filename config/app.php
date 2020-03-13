@@ -178,6 +178,9 @@ return [
         Collective\Html\HtmlServiceProvider::class,
 
         Tymon\JWTAuth\Providers\JWTAuthServiceProvider::class,
+
+        //db back up
+        Witty\LaravelDbBackup\DBBackupServiceProvider::class
     ],
 
     /*

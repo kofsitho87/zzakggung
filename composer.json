@@ -18,7 +18,8 @@
         "nesbot/carbon": "1.32.0 as 1.25",
         "php-http/curl-client": "^1.7",
         "php-http/message": "^1.7",
-        "tymon/jwt-auth": "^0.5.12"
+        "tymon/jwt-auth": "^0.5.12",
+        "wladmonax/laravel-db-backup": "^1.1"
     },
     "require-dev": {
         "beyondcode/laravel-dump-server": "^1.0",

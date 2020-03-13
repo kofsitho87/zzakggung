@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 
 use Validator;
 use DB;
+use Artisan;
 
 use App\Model\User;
 use App\Model\Order;
@@ -744,5 +745,55 @@ class AdminController extends BaseController
 
         $data = compact('notice');
         return $this->sendResponse($data);
+    }
+
+    public function rawOrders(Request $request)
+    {
+        $count = $request->count ? $request->count : 100;
+        $query = Order::query();
+        
+        $_edate = $request->edate . ' 23:59:59';
+        $query->where([
+            ['created_at', '>=', $request->sdate],
+            ['created_at', '<=', $_edate]
+        ]);
+
+        //$orders = $query->limit($count)->get();
+        $orders = $query->orderBy('id', "desc")->paginate($count);
+        $data = compact('orders');
+        return $this->sendResponse($data, '');
+    }
+
+    public function deleteAllOrders(Request $request)
+    {
+        $credentials = $request->only('sdate', 'edate');
+        $rules = [
+            'sdate' => 'required',
+            'edate' => 'required',
+        ];
+        $validator = Validator::make($credentials, $rules);
+        if( $validator->fails() )
+        {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_DELETE_DB_ORDERS', $messages);
+        }
+        
+        //db backup
+        Artisan::call('db:backup');
+
+
+        $query = Order::query();
+        $_edate = $request->edate . ' 23:59:59';
+        $query->where([
+            ['created_at', '>=', $request->sdate],
+            ['created_at', '<=', $_edate]
+        ]);
+        if( !$query->delete() )
+        {
+            return $this->sendError('FAILED_DELETE_DB_ORDERS');
+        }
+        
+        
+        return $this->sendResponse([]);
     }
 }

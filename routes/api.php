@@ -74,6 +74,11 @@ Route::group(['middleware' => 'jwt.auth', 'prefix' => 'admin'], function(){
     Route::put('/notices/{notice}', 'Api\AdminController@updateNotice')->where('notice', '[0-9]+');
     //delete notices
     Route::delete('/notices/{notice}', 'Api\AdminController@deleteNotice')->where('notice', '[0-9]+');
+
+
+    //get db list
+    Route::get('/db/raw_orders', 'Api\AdminController@rawOrders');
+    Route::post('/db/delete_all', 'Api\AdminController@deleteAllOrders');
 });
 
 Route::post('/auth/login', 'AuthController@login');

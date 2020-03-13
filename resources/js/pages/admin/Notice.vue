@@ -114,7 +114,7 @@ export default {
         this.$notify({
           group: "top-center",
           type: "error",
-          title: e.message
+          title: ""
         })
       } finally {
         this.isLoading = false
