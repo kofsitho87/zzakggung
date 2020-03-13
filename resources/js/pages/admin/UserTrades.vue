@@ -1,5 +1,5 @@
 <template>
-  <div v-if="user">
+  <b-container v-if="user">
     <b-card
       header="적립내역 추가"
       tag="article"
@@ -146,7 +146,7 @@
         </div>
       </template>
     </b-card>
-  </div>
+  </b-container>
 </template>
 
 <script>

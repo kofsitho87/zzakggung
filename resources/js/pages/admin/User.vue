@@ -1,5 +1,5 @@
 <template>
-  <div v-if="user">
+  <b-container v-if="user">
     <b-card
       tag="article"
       class="mb-5"
@@ -59,7 +59,7 @@
         </b-button>
       </template>
     </b-card>
-  </div>
+  </b-container>
 </template>
 
 <script>

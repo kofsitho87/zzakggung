@@ -1,60 +1,4 @@
 <template>
-  <!-- <vs-row vs-justify="center">
-    <vs-col
-      type="flex"
-      vs-justify="center"
-      vs-align="center"
-      vs-w="12"
-    >
-      <vs-table
-        stripe
-        :data="users"
-      >
-        <template slot="header">
-          <h3>
-            Users
-          </h3>
-        </template>
-        <template slot="thead">
-          <vs-th>
-            Email
-          </vs-th>
-          <vs-th>
-            Name
-          </vs-th>
-          <vs-th>
-            Website
-          </vs-th>
-          <vs-th>
-            Nro
-          </vs-th>
-        </template>
-
-        <template slot-scope="{data}">
-          <vs-tr
-            :key="indextr"
-            v-for="(tr, indextr) in data"
-          >
-            <vs-td :data="data[indextr].email">
-              {{ data[indextr].email }}
-            </vs-td>
-
-            <vs-td :data="data[indextr].username">
-              {{ data[indextr].name }}
-            </vs-td>
-
-            <vs-td :data="data[indextr].id">
-              {{ data[indextr].website }}
-            </vs-td>
-
-            <vs-td :data="data[indextr].id">
-              {{ data[indextr].id }}
-            </vs-td>
-          </vs-tr>
-        </template>
-      </vs-table>
-    </vs-col>
-  </vs-row> -->
   <b-container>
     <div>
       <h6>거래처 생성/수정 및 거래처별 주문내역 관리</h6>
@@ -71,7 +15,7 @@
       </template>
       <template v-slot:cell(user)="data">
         <router-link :to="{name: 'AdminUser', params: {id: data.value.id}}">
-          <b class="text-info">{{ data.value.email }}</b>
+          {{ data.value.email }}
         </router-link>
       </template>
       <template v-slot:cell(trade_link_id)="data">

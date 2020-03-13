@@ -1,7 +1,7 @@
 <template>
   <div class="pb-4">
     <b-card
-      title="주문내역 관리"
+      header="주문내역 관리"
       tag="article"
       class="mb-5"
     >
