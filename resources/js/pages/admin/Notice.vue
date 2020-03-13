@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <b-container>
     <h5>공지사항</h5>
     <div>
       <vue-editor
@@ -61,7 +61,7 @@
         </b-table>
       </b-card>
     </div> -->
-  </div>
+  </b-container>
 </template>
 
 <script>

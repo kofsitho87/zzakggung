@@ -55,7 +55,7 @@
       </vs-table>
     </vs-col>
   </vs-row> -->
-  <div>
+  <b-container>
     <div>
       <h6>거래처 생성/수정 및 거래처별 주문내역 관리</h6>
     </div>
@@ -90,7 +90,7 @@
         거래처 생성/수정 및 거래처별 주문내역 관리
       </template>
     </b-table>
-  </div>
+  </b-container>
 </template>
 
 <script>

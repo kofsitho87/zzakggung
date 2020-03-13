@@ -39,11 +39,20 @@
         (차감금액: {{ $options.filters.comma(data.value.minus) }}원)
       </span>
     </template>
+    <template v-slot:cell(product_price)="data">
+      {{ $options.filters.comma(data.value * data.item.qty) }}원
+    </template>
     <template v-slot:cell(delivery_provider)="data">
       {{ data.value.name }}
     </template>
     <template v-slot:cell(status)="data">
-      {{ data.value.name }}
+      <span :class="{
+        'text-danger': data.value.id == 5, 
+        'text-primary': data.value.id == 6,
+        'text-success': data.value.id == 4 || data.value.id == 7 || data.value.id == 8
+      }">
+        {{ data.value.name }}
+      </span>
       <b-button
         v-if="data.value.id == 3"
         size="sm"

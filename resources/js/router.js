@@ -56,6 +56,14 @@ const router = new VueRouter({
           }
         },
         {
+          path: "users",
+          component: AdminUsers,
+          name: "AdminUsers",
+          meta: {
+            title: "거래처관리"
+          }
+        },
+        {
           path: "users/:id",
           component: AdminUser,
           name: "AdminUser",

@@ -843,7 +843,7 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
 .spinner {
   position: fixed;
   left: 50%;
@@ -854,5 +854,9 @@ table.orders_table tr.selected {
 }
 table.orders_table th, table.orders_table td {
   font-size: 0.7rem;
+}
+
+#order_receiver_change {
+  font-size:0.8rem;
 }
 </style>

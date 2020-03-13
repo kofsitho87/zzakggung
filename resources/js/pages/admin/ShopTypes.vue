@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <b-container>
     <b-card header="거래처타입관리">
       <b-table-simple
         ref="table"
@@ -112,7 +112,7 @@
         </b-tfoot>
       </b-table-simple>
     </b-card>
-  </div>
+  </b-container>
 </template>
 
 <script>

@@ -1,8 +1,5 @@
 <template>
-  <b-container
-    fluid
-    class="py-4"
-  >
+  <b-container>
     <b-form @submit.prevent="searchAction">
       <b-form-group 
         description="주문DB 검색"

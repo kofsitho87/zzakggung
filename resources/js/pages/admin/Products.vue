@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <b-container>
     <b-card>
       <b-form @submit.prevent="searchAction">
         <b-form-group>
@@ -77,7 +77,7 @@
         />
       </template>
     </b-card>
-  </div>
+  </b-container>
 </template>
 
 <script>
