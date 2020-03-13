@@ -48,8 +48,8 @@
     <template v-slot:cell(status)="data">
       <span :class="{
         'text-danger': data.value.id == 5, 
-        'text-primary': data.value.id == 6,
-        'text-success': data.value.id == 4 || data.value.id == 7 || data.value.id == 8
+        'text-success': data.value.id == 4,
+        'text-primary': data.value.id == 7 || data.value.id == 8
       }">
         {{ data.value.name }}
       </span>
