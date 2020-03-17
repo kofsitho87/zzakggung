@@ -228,6 +228,7 @@
       @toggleSelectAll="toggleSelectAll"
       @onRowSelected="onRowSelected"
       @showChangeReceiverModal="showChangeReceiverModal"
+      @updateOrderStatus="updateOrderStatus"
     />
 
     <div>
@@ -535,9 +536,9 @@ export default {
         this.perPage = orders.per_page
         this.totalPrice = total_price
         let orderStatus = Object.keys(order_status).map(key => {
-          return {text: order_status[key], value:key}
+          return {text: order_status[key], value: key}
         })
-        this.order_status = [{text: "전체", value:0}, ...orderStatus]
+        this.order_status = [{text: "전체", value: 0}, ...orderStatus]
       } catch (e){
         console.log(e)
       } finally {
@@ -784,11 +785,11 @@ export default {
       
       this.isLoading = true
       try {
+        var formData = new FormData()
+        formData.append("excel", file)
         await this.$store.dispatch("post", {
           api: "orders/upload",
-          payload: {
-            excel: file
-          }
+          payload: formData
         })
         this.$notify({
           group: "top-center",

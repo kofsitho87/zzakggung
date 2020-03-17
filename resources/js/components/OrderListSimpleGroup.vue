@@ -46,11 +46,13 @@
       {{ data.value.name }}
     </template>
     <template v-slot:cell(status)="data">
-      <span :class="{
-        'text-danger': data.value.id == 5, 
-        'text-success': data.value.id == 4,
-        'text-primary': data.value.id == 7 || data.value.id == 8
-      }">
+      <span
+        :class="{
+          'text-danger': data.value.id == 5 || data.value.id == 7, 
+          'text-success': data.value.id == 4,
+          'text-primary': data.value.id == 8 || data.value.id == 6
+        }"
+      >
         {{ data.value.name }}
       </span>
       <b-button
@@ -198,6 +200,9 @@ export default {
     onRowSelected(item){
       //item.selected = true
       this.$emit("onRowSelected", item)
+    },
+    async updateOrderStatus(order){
+      this.$emit("updateOrderStatus", order)
     }
   }
 }

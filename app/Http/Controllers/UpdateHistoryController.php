@@ -15,6 +15,14 @@ use App\Model\History;
 
 class UpdateHistoryController extends Api\BaseController
 {
+    public function delete(Request $request, History $history)
+    {
+        if (!$history->delete()) {
+            return $this->sendError('FAILED_DELETE_HISTORY');
+        }
+        return $this->sendResponse([]);
+    }
+
     public function update(Request $request, History $history)
     {
         $credentials = $request->only('status');

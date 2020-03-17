@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <b-container>
     <b-card header="새상품등록">
       <b-form>
         <b-form-group
@@ -56,7 +56,7 @@
         </div>
       </template>
     </b-card>
-  </div>
+  </b-container>
 </template>
 
 <script>

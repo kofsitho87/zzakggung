@@ -64,12 +64,18 @@
             <b-nav-item-dropdown right>
               <!-- Using 'button-content' slot -->
               <template v-slot:button-content>
-                <em>{{ user.name }}</em>
+                {{ user.name }}
               </template>
-              <b-dropdown-item to="/admin/change_pw">
+              <b-dropdown-item
+                to="/admin/change_pw"
+                class="font-size-1"
+              >
                 비밀번호 변경
               </b-dropdown-item>
-              <b-dropdown-item @click="logoutAction">
+              <b-dropdown-item
+                @click="logoutAction"
+                class="font-size-1"
+              >
                 로그아웃
               </b-dropdown-item>
             </b-nav-item-dropdown>

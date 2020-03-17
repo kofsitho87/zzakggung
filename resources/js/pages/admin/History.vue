@@ -6,10 +6,15 @@
         class="mb-5"
       >
         <b-form-group>
-          <b-form-input
+          <!-- <b-form-input
             v-model="form.title"
             placeholder="타이틀"
             :state="$v.form.title.$dirty ? !$v.form.title.$error : null"
+          /> -->
+          <b-textarea
+            v-model="form.title"
+            :state="$v.form.title.$dirty ? !$v.form.title.$error : null"
+            placeholder="타이틀"
           />
         </b-form-group>
         <!-- <b-form-group>
@@ -32,7 +37,7 @@
       </b-form>
 
       <b-table
-        striped
+        ref="table"
         hover
         :items="items"
         :fields="fields"
@@ -40,12 +45,27 @@
         <template v-slot:cell(index)="data">
           {{ (page-1) * perPage + (data.index + 1) }}
         </template>
+        <template v-slot:cell(title)="data">
+          <p
+            class="white-wrap"
+            v-html="data.value"
+          />
+        </template>
         <template v-slot:cell(status)="data">
           <b-select
             :value="data.value"
             :options="statusOptions"
             @change="updateStatus(data.item)"
           />
+        </template>
+        <template v-slot:cell(delete)="data">
+          <b-button
+            size="sm"
+            variant="danger"
+            @click="deleteAction(data.item)"
+          >
+            삭제
+          </b-button>
         </template>
       </b-table>
     </b-card>
@@ -87,6 +107,10 @@ export default {
         {
           key: "created_at",
           label: "생성시간"
+        },
+        {
+          key: "delete",
+          label: "삭제"
         }
       ]
     }
@@ -114,16 +138,42 @@ export default {
     this.getItems()
   },
   methods: {
-    async updateStatus(item){
+    async deleteAction(item){
       console.log(item)
-      console.log(event.target.value)
+      this.isLoading = true
+
+      try {
+        await this.$store.dispatch("delete", {
+          api: `history/${item.id}`,
+          payload: {}
+        })
+        let index = this.items.findIndex(row => row.id == item.id)
+        if(index > -1){
+          this.items.splice(index, 1)
+        }
+
+      } catch(e) {
+        this.$notify({
+          type: "error",
+          group: "top-center",
+          title: e.message
+        })
+      } finally {
+        this.isLoading = false
+      }
+
+    },
+    async updateStatus(item){
+      // console.log(item)
+      // console.log()
+      let status = event.target.value
       
       this.isLoading = true
       try {
         await this.$store.dispatch("put", {
           api: `history/${item.id}`,
           payload: {
-            status: event.target.value
+            status
           }
         })
         this.$notify({
@@ -131,6 +181,21 @@ export default {
           group: "top-center",
           title: "상태가 변경 되었습니다."
         })
+        
+        switch(status){
+        case "등록":
+          item._rowVariant = ""
+          break
+        case "진행":
+          item._rowVariant = "primary"
+          break
+        case "완료":
+          item._rowVariant = "success"
+          break
+        }
+        
+        this.$refs.table.refresh()
+        
         
       } catch(e) {
         this.$notify({
@@ -150,7 +215,20 @@ export default {
           payload: {}
         })
         console.log(items)
-        this.items = items.data
+        this.items = items.data.map(item => {
+          switch(item.status){
+          case "등록":
+            item._rowVariant = ""
+            break
+          case "진행":
+            item._rowVariant = "primary"
+            break
+          case "완료":
+            item._rowVariant = "success"
+            break
+          }
+          return item
+        })
         
       } catch(e) {
         this.$notify({
@@ -176,6 +254,7 @@ export default {
           payload: this.form
         })
         //console.log(history)
+        history._rowVariant = ""
         this.items = [history, ...this.items]
         this.form.title = null
         this.form.desc = null
