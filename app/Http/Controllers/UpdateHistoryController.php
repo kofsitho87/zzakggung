@@ -53,7 +53,7 @@ class UpdateHistoryController extends Api\BaseController
 
         $history = new History;
         $history->title = $request->title;
-        $history->statue = "등록";
+        $history->status = "등록";
 
 
         if (!$history->save()) {
