@@ -1,6 +1,49 @@
 <template>
   <b-container>
-    <b-card header="거래처타입관리">
+    <b-card
+      v-if="isShowAdd"
+      header="배송사추가"
+      class="mb-4"
+    >
+      <b-form @submit.prevent="addProvider">
+        <b-form-group label="배송사">
+          <b-form-input
+            placeholder="배송사명"
+            v-model="provider"
+          />
+        </b-form-group>
+        <div class="text-right">
+          <b-button
+            variant="primary"
+            size="sm"
+            type="submit"
+          >
+            생성
+          </b-button>
+          <b-button
+            variant="danger"
+            size="sm"
+            @click="isShowAdd=false"
+          >
+            닫기
+          </b-button>
+        </div>
+      </b-form>
+    </b-card>
+    <b-card>
+      <template v-slot:header>
+        배송사 관리
+        <b-button
+          v-if="!isShowAdd"
+          size="sm"
+          class="float-right"
+          variant="primary"
+          @click="isShowAdd=true"
+          :disabled="isLoading"
+        >
+          + 추가
+        </b-button>
+      </template>
       <b-table-simple
         ref="table"
         responsive
@@ -8,74 +51,23 @@
       >
         <b-thead head-variant="light">
           <b-tr>
-            <b-th>거래처타입</b-th>
-            <b-th>배송비</b-th>
-            <b-th>초기배송상태</b-th>
-            <b-th>삭제</b-th>
+            <b-th>순서</b-th>
+            <b-th>배송사</b-th>
+            <!-- <b-th>삭제</b-th> -->
           </b-tr>
         </b-thead>
         <b-tbody>
           <b-tr
-            v-for="item in shopTypes"
+            v-for="item in deliveryProviders"
             :key="item.id"
           >
             <b-td>
-              <div v-if="item.id">
-                {{ item.type }}
-              </div>
-              <b-form-input
-                v-else
-                v-model="item.type"
-                placeholder="거래처타입(1글자)"
-              />
+              {{ item.value }}
             </b-td>
             <b-td>
-              <!-- {{ $options.filters.comma(item.delivery_price) }}원 -->
-              <b-form-input
-                placeholder="배송비"
-                type="number"
-                v-model="item.delivery_price"
-                @change="changeItem(item)"
-              />
+              {{ item.text }}
             </b-td>
-            <b-td>
-              <div v-if="item.id">
-                {{ item.status.name }}
-              </div>
-              <b-form-select
-                v-else
-                v-model="item.delivery_status"
-              >
-                <b-form-select-option :value="0">
-                  선택
-                </b-form-select-option>
-                <b-form-select-option :value="1">
-                  입금대기
-                </b-form-select-option>
-                <b-form-select-option :value="2">
-                  배송준비중
-                </b-form-select-option>
-                <b-form-select-option :value="3">
-                  발송대기
-                </b-form-select-option>
-                <b-form-select-option :value="4">
-                  발송완료
-                </b-form-select-option>
-                <b-form-select-option :value="5">
-                  반품요청
-                </b-form-select-option>
-                <b-form-select-option :value="6">
-                  교환요청
-                </b-form-select-option>
-                <b-form-select-option :value="7">
-                  반품완료
-                </b-form-select-option>
-                <b-form-select-option :value="8">
-                  교환완료
-                </b-form-select-option>
-              </b-form-select>
-            </b-td>
-            <b-td>
+            <!-- <b-td>
               <b-button-group>
                 <b-button
                   v-if="item.id == 0"
@@ -93,10 +85,10 @@
                   삭제
                 </b-button>
               </b-button-group>
-            </b-td>
+            </b-td> -->
           </b-tr>
         </b-tbody>
-        <b-tfoot>
+        <!-- <b-tfoot>
           <b-tr>
             <b-td colspan="4">
               <b-button
@@ -109,7 +101,7 @@
               </b-button>
             </b-td>
           </b-tr>
-        </b-tfoot>
+        </b-tfoot> -->
       </b-table-simple>
     </b-card>
   </b-container>
@@ -118,39 +110,65 @@
 <script>
 export default {
   data(){
-    //console.log( this.$store )
-    
     return {
+      isShowAdd: false,
       isLoading: false,
-      shopTypes: JSON.parse(JSON.stringify(this.$store.getters.shopTypes))
+      provider: null,
+      //deliveryProviders: JSON.parse(JSON.stringify(this.$store.getters.deliveryProviders)),
     }
   },
   computed: {
     isEnableAddItem(){
-      return this.shopTypes.filter(row => row.id === 0).length < 1
+      return true
+      //return this.shopTypes.filter(row => row.id === 0).length < 1
     },
-    // shopTypes(){
-    //   return this.$store.getters.shopTypes
-    // }
-  },
-  mounted(){
-    this.$store.dispatch("getShopTypes")
+    deliveryProviders(){
+      return this.$store.getters.deliveryProviders
+    }
   },
   methods: {
-    addItem(){
-      const shopType = {
-        id: 0,
-        type: null,
-        delivery_price: 0,
-        delivery_status: 0,
-        status: {
-          id: 0,
-          name: null,
-          description: null
-        }
+    async addProvider(){
+      if(!this.provider){
+        this.$notify({
+          group: "top-center",
+          type: "error",
+          title: "배송사를 입력해주세요"
+        })
+        return
       }
-      //this.$store.commit("CREATE_SHOP_TYPE", shopType)
-      this.shopTypes = [...this.shopTypes, shopType]
+      this.isLoading = true
+      try {
+        await this.$store.dispatch("post", {
+          api: "config/deliveryProviders",
+          payload: {
+            provider: this.provider
+          }
+        })
+        this.$store.dispatch("deliveryProviders")
+        this.provider = null
+        this.isShowAdd = false
+        
+        this.$notify({
+          group: "top-center",
+          type: "success",
+          title: "생성 성공"
+        })
+      } catch (e){
+        this.$notify({
+          group: "top-center",
+          type: "error",
+          title: e.message
+        })
+      } finally {
+        this.isLoading = false
+      }
+    },
+    addItem(){
+      const deliveryProvider = {
+        text: "",
+        value: null
+      }
+      this.deliveryProviders = [...this.deliveryProviders, deliveryProvider]
     },
     async createItem(item){
       //console.log(item)

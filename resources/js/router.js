@@ -19,8 +19,12 @@ import AdminProduct from "./pages/admin/Product"
 import AdminCreateProduct from "./pages/admin/CreateProduct"
 
 import AdminShopTypes from "./pages/admin/ShopTypes"
+import AdminDelivery from "./pages/admin/Delivery"
 import AdminNotice from "./pages/admin/Notice"
 import AdminDB from "./pages/admin/DB"
+import AdminChangePw from "./pages/admin/ChangePw"
+import AdminHistory from "./pages/admin/History"
+
 
 const requireAuth = (to, from, next) => {
   if (store.getters.isAuthenticated) return next()
@@ -128,6 +132,14 @@ const router = new VueRouter({
           }
         },
         {
+          path: "delivery/providers",
+          component: AdminDelivery,
+          name: "AdminDelivery",
+          meta: {
+            title: "배송사관리"
+          }
+        },
+        {
           path: "notice",
           component: AdminNotice,
           name: "AdminNotice",
@@ -141,6 +153,22 @@ const router = new VueRouter({
           name: "AdminDB",
           meta: {
             title: "디비관리자"
+          }
+        },
+        {
+          path: "change_pw",
+          component: AdminChangePw,
+          name: "AdminChangePw",
+          meta: {
+            title: "비밀번호 변경"
+          }
+        },
+        {
+          path: "history",
+          component: AdminHistory,
+          name: "AdminHistory",
+          meta: {
+            title: "업데이트 히스토리"
           }
         },
       ]

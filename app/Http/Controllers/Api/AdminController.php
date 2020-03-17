@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use Validator;
 use DB;
 use Artisan;
+use Auth;
 
 use App\Model\User;
 use App\Model\Order;
@@ -23,7 +24,33 @@ use App\Exports\AdminOrderExport;
 
 class AdminController extends BaseController
 {
-    
+    public function changePw(Request $request)
+    {
+        $credentials = $request->only('password', 'new_password');
+        $rules = [
+            //'password'  => 'required|min:6',
+            'new_password'  => 'required|min:6',
+        ];
+        $messages = [
+            //'password.required'  => '필수값입니다.',
+            'new_password.required'  => '필수값입니다.',
+        ];
+        $validator = Validator::make($credentials, $rules, $messages);
+        if ($validator->fails()) {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_CHANGE_PASSWORD', $messages);
+        }
+
+        $user = Auth::user();
+        $user->password = bcrypt($request->new_password);
+
+        if (!$user->save()) {
+            return $this->sendError('FAILED_CHANGE_PASSWORD', "");
+        }
+
+        return $this->sendResponse([]);
+    }
+
     public function shopTypes(Request $request)
     {
         $shopTypes = ShopType::with("status")->get();
@@ -35,18 +62,109 @@ class AdminController extends BaseController
         $providers = DeliveryProvider::all();
         $delivery_providers = [];
 
-        foreach($providers as $provider)
-        {
+        foreach ($providers as $provider) {
             $delivery_providers[$provider->id] = $provider->name;
         }
 
         $data = compact('providers', 'delivery_providers');
         return $this->sendResponse($data, '');
     }
+    public function createDeliveryProviders(Request $request)
+    {
+        $credentials = $request->only('provider');
+        $rules = [
+            'provider' => "required"
+        ];
+        $messages = [
+            'provider.required'  => '필수값입니다.',
+        ];
+        $validator = Validator::make($credentials, $rules, $messages);
+        if ($validator->fails()) {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_CREATE_USER', $messages);
+        }
+
+        $provider = new DeliveryProvider;
+        $provider->name = $request->provider;
+        if (!$provider->save()) {
+            return $this->sendError('FAILED_CREATE_Delivery_Provider');
+        }
+
+        $data = compact("provider");
+        return $this->sendResponse($data);
+    }
+
+    public function createProductByExcel(Request $request)
+    {
+        $credentials = $request->only('excel');
+        $rules = [
+            'excel' => 'required|file|mimetypes:application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ];
+        $validator = Validator::make($credentials, $rules);
+        if ($validator->fails()) {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_UPLOAD_EXCEL', $messages);
+        }
+
+        $products = \Maatwebsite\Excel\Facades\Excel::toArray(new \App\Imports\ProductsImport,  $request->file('excel'));
+        $_products = collect($products[0]);
+        $products = collect();
+        $shop_types = ShopType::where('type', '!=', 'Z')->get();
+
+        DB::beginTransaction();
+
+        foreach ($_products as $idx => $row) {
+            if ($idx == 0) continue;
+
+            if (!isset($row[0]) && !isset($row[1]))
+                continue;
+
+            $model_id = trim($row[0]);
+            $name     = trim($row[1]);
+
+            if (Product::where('model_id', $model_id)->first()) {
+                continue;
+            }
+
+            $product = new Product;
+            $product->model_id = $model_id;
+            $product->name = $name;
+
+            if (!$product->save()) {
+                DB::rollback();
+                return redirect()->back()->withErrors('DB ERROR: 상품등록 실패');
+            }
+
+            foreach ($shop_types as $idx => $type) {
+                $price = 0;
+                if (isset($row[$idx + 2])) {
+                    $priceVal = $row[$idx + 2];
+
+                    if (is_numeric($priceVal)) {
+                        $price = trim($priceVal);
+                    }
+                }
+                $product->prices()->create([
+                    'shop_type_id' => $type->id,
+                    'price'        => $price
+                ]);
+            }
+
+            $products[] = $product;
+        }
+
+        DB::commit();
+
+        if ($products->count() < 1) {
+            return $this->sendError('FAILED_UPLOAD_EXCEL', 'ERROR: 상품등록 갯수가 없습니다.');
+        }
+
+        return $this->sendResponse([]);
+    }
 
     public function users(Request $request)
     {
-        $users = User::where('is_admin', false)->paginate(50);
+        $users = User::where('is_admin', false)->paginate(100);
         $data = compact('users');
         return $this->sendResponse($data, '');
     }
@@ -59,31 +177,75 @@ class AdminController extends BaseController
 
     public function updateUser(Request $request, User $user)
     {
-        $credentials = $request->only('name', 'user_id', 'shop_type_id');
+        $credentials = $request->only('name', 'email', 'shop_type_id');
         $rules = [
             'name' => 'required',
-            'user_id' => 'required',
+            'email' => 'required',
             'shop_type_id' => 'required',
         ];
         $messages = [
             'name.required'  => '필수값입니다.',
-            'user_id.required'  => '필수값입니다.',
+            'email.required'  => '필수값입니다.',
             'shop_type_id.required'  => '필수값입니다.'
         ];
         $validator = Validator::make($credentials, $rules, $messages);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('FAILED_UPDATE_USER', $messages);
         }
 
         $user->name = $request->name;
-        $user->user_id = $request->user_id;
+        $user->email = $request->email;
         $user->shop_type_id = $request->shop_type_id;
 
-        if( ! $user->save() )
-        {
+        if (!$user->save()) {
             return $this->sendError('FAILED_UPDATE_USER');
+        }
+        return $this->sendResponse([]);
+    }
+
+    public function createUser(Request $request)
+    {
+        $credentials = $request->only('name', 'email', 'password', 'shop_type_id');
+        $rules = [
+            'name'      => "required|unique:users",
+            'email'     => 'required|unique:users',
+            'password'  => 'required|min:6',
+            'shop_type_id' => 'required',
+        ];
+        $messages = [
+            'name.required'  => '거래처 이름은 필수값입니다.',
+            'name.unique'    => '이미 존재하는 거래처이름입니다.',
+            'email.required' => '이메일은 필수값입니다.',
+            'email.unique'   => '이미 존재하는 이메일입니다.',
+            'password.required' => '비밀번호는 필수값 입니다.',
+            'password.min' => '비밀번호는 6글자 이상 입력해주세요!',
+            'shop_type_id.required'  => '필수값입니다.'
+        ];
+        $validator = Validator::make($credentials, $rules, $messages);
+        if ($validator->fails()) {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_CREATE_USER', $messages);
+        }
+
+        $user = new User;
+        $user->user_id      = $request->name;
+        $user->name         = $request->name;
+        $user->email        = $request->email;
+        $user->shop_type_id = $request->shop_type_id;
+        $user->password     = bcrypt($request->password);
+
+        if (!$user->save()) {
+            return $this->sendError('FAILED_CREATE_USER');
+        }
+        $data = compact('user');
+        return $this->sendResponse($data);
+    }
+
+    public function deleteUser(Request $request, User $user)
+    {
+        if (!$user->delete()) {
+            return $this->sendError('FAILED_DELETE_USER', '유저삭제실패');
         }
         return $this->sendResponse([]);
     }
@@ -96,18 +258,16 @@ class AdminController extends BaseController
         $read_trades = Trade::where('user_id', $user->id)
             ->orderByDesc('id')
             ->paginate($count);
-        
+
         //수정된 부분
         $all_trades = Trade::where('user_id', $user->id)->get();
         $trades = [];
-        foreach($all_trades as $idx => $trade)
-        {
+        foreach ($all_trades as $idx => $trade) {
             $trade->plus = $trade->is_plus ? $trade->price : 0;
             $trade->minus = $trade->is_plus ? 0 : $trade->price;
             $trade->change = $trade->plus - $trade->minus;
 
-            if( $idx > 0 )
-            {
+            if ($idx > 0) {
                 $change = $all_trades[$idx - 1]->change;
                 $trade->change = $change + $trade->change;
             }
@@ -133,8 +293,7 @@ class AdminController extends BaseController
             'content'    => 'required'
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('FAILED_ADD_USER_TRADE', $messages);
         }
@@ -142,14 +301,13 @@ class AdminController extends BaseController
         $trade = new Trade;
         $trade->user_id = $user->id;
         $trade->is_plus = $request->is_plus;
-        $trade->price   = (int)$request->price;
+        $trade->price   = (int) $request->price;
         $trade->content = $request->content;
 
-        if( ! $trade->save() )
-        {
+        if (!$trade->save()) {
             return $this->sendError('FAILED_ADD_USER_TRADE');
         }
-        
+
         $data = compact('trade');
         return $this->sendResponse($data, '');
     }
@@ -161,21 +319,17 @@ class AdminController extends BaseController
             'trades.*'    => 'required',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('FAILED_DELETE_USER_TRADE', $messages);
         }
 
-        if( !$request->trades || !is_array($request->trades) )
-        {
+        if (!$request->trades || !is_array($request->trades)) {
             return $this->sendError('FAILED_DELETE_USER_TRADE', ['삭제할 내역이 없음']);
         }
 
-        foreach($request->trades as $row)
-        {
-            if( $trade = Trade::find($row) )
-            {
+        foreach ($request->trades as $row) {
+            if ($trade = Trade::find($row)) {
                 $trade->delete();
             }
         }
@@ -195,8 +349,7 @@ class AdminController extends BaseController
         $query = Order::with('status', 'message', 'deliveryProvider');
 
         //날짜검색
-        if( isset($request->sdate) && isset($request->edate) && !empty($request->sdate) && !empty($request->edate) )
-        {
+        if (isset($request->sdate) && isset($request->edate) && !empty($request->sdate) && !empty($request->edate)) {
             $_edate = $request->edate . ' 23:59:59';
             $query->where([
                 ['created_at', '>=', $request->sdate],
@@ -204,13 +357,11 @@ class AdminController extends BaseController
             ]);
         }
         //주문상태검색
-        if( isset($request->delivery_status) && $request->delivery_status > 0 )
-        {
+        if (isset($request->delivery_status) && $request->delivery_status > 0) {
             $query->where('delivery_status', $request->delivery_status);
         }
         //조건검색
-        if($keyword && $request->keyword_option)
-        {
+        if ($keyword && $request->keyword_option) {
             //keyword_option
             //1.receiver
             //2.phone
@@ -218,13 +369,12 @@ class AdminController extends BaseController
             //4.id
             //5.model_id
 
-            switch($request->keyword_option)
-            {
+            switch ($request->keyword_option) {
                 case 1:
                     $search_receivers = explode(",", $keyword);
                     //$query->where('receiver', 'LIKE', "%${keyword}%");
-                    $query->where(function($q) use($search_receivers){
-                        foreach($search_receivers as $receiver){
+                    $query->where(function ($q) use ($search_receivers) {
+                        foreach ($search_receivers as $receiver) {
                             $receiver = trim($receiver);
                             $q->orWhere('receiver', 'LIKE', "%${receiver}%");
                         }
@@ -240,12 +390,12 @@ class AdminController extends BaseController
                     $query->where('id', $keyword);
                     break;
                 case 5:
-                    $query->whereHas('product', function($q) use($keyword){
+                    $query->whereHas('product', function ($q) use ($keyword) {
                         $q->where('model_id', $keyword);
                     });
                     break;
                 case 6:
-                    $query->whereHas('user', function($q) use($keyword){
+                    $query->whereHas('user', function ($q) use ($keyword) {
                         $q->where('name', $keyword);
                     });
                     break;
@@ -270,15 +420,14 @@ class AdminController extends BaseController
         $desc = $order_by == 1 ? 'ASC' : 'DESC';
         $orders = $query->orderBy('id', $desc)->paginate($cnt);
 
-        
-        $total_price = $orders->sum(function($order) {
+
+        $total_price = $orders->sum(function ($order) {
             $shop_type_id = $order->user->shop_type_id;
             return ($order->qty * $order->product->price($shop_type_id)) + $order->delivery_price - $order->minus_price;
         });
 
         $order_status = [];
-        foreach(OrderStatus::all() as $status)
-        {
+        foreach (OrderStatus::all() as $status) {
             $order_status[$status->id] = $status->name;
         }
 
@@ -296,8 +445,7 @@ class AdminController extends BaseController
             'delivery_status.required'  => '필수값입니다.'
         ];
         $validator = Validator::make($credentials, $rules, $messages);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('FAILED_UPDATE_ORDER', $messages);
         }
@@ -308,8 +456,7 @@ class AdminController extends BaseController
         $order->delivery_code     = $request->delivery_code;
         $order->comment           = $request->comment;
 
-        if( ! $order->save() )
-        {
+        if (!$order->save()) {
             return $this->sendError('FAILED_UPDATE_ORDER');
         }
         return $this->sendResponse([]);
@@ -323,41 +470,32 @@ class AdminController extends BaseController
         // var_dump($delivery_status);
         // var_dump(!!$is_deleted);
         // die();
-        
-        if( !$orders = $request->orders )
-        {
+
+        if (!$orders = $request->orders) {
             return $this->sendError('EMPTY_ORDERS');
-        }
-        else if(!$delivery_status && !$comment )
-        {
+        } else if (!$delivery_status && !$comment) {
             return $this->sendError('NOT_ENOUGHT_PARAM');
         }
-        
-        foreach($orders as $row)
-        {
+
+        foreach ($orders as $row) {
             // $order = Order::find($row['id']);
             // print_r($order);
-            if( $order = Order::find($row['id']) )
-            {
-                if( $delivery_status )
-                {
+            if ($order = Order::find($row['id'])) {
+                if ($delivery_status) {
                     $order->delivery_status = $delivery_status;
                 }
-                if( $comment )
-                {
+                if ($comment) {
                     $order->comment = $comment;
                 }
-                
+
                 //order 업데이트시 상태가 반품완료일때 업체에게 사용가능적립금 추가!(2)
-                if( $order->save() && $delivery_status == 7 )
-                {
+                if ($order->save() && $delivery_status == 7) {
                     $trade = new Trade;
                     $trade->user_id = $order->user->id;
                     $trade->is_plus = true;
                     $trade->price   = $request->refund; //$order->product->price($order->user->shop_type_id) * $order->qty;
                     $trade->content = "주문번호: " . $order->id . "번 수취인:" . $order->receiver . " 의 반품으로 인한 사용가능적립금 추가";
-                    if( ! $trade->save() )
-                    {
+                    if (!$trade->save()) {
                         return $this->sendError('FAILED_UPDATE_ORDERS');
                     }
                 }
@@ -373,21 +511,17 @@ class AdminController extends BaseController
             'orders' => 'required'
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('EMPTY_ORDERS', $messages);
         }
 
         $orders = $request->orders;
-        foreach($orders as $row)
-        {
+        foreach ($orders as $row) {
             //print_r($row);
             // $_order = json_decode($row);
-            if( $order = Order::find($row['id']) )
-            {
-                if( ! $order->delete() )
-                {
+            if ($order = Order::find($row['id'])) {
+                if (!$order->delete()) {
                     return $this->sendError('FAILED_DELETE_ORDERS');
                 }
             }
@@ -404,8 +538,7 @@ class AdminController extends BaseController
         $order->phone_2 = $request->phone_2;
         $order->delivery_code = $request->delivery_code;
         $order->zipcode = $request->zipcode;
-        if( !$order->save() )
-        {
+        if (!$order->save()) {
             return $this->sendError('FAILED_UPDATE_ORDER_RECEIVER');
         }
 
@@ -424,13 +557,11 @@ class AdminController extends BaseController
         $order_by        = $request->order_by;
         $count           = $request->count;
 
-        if($request->delivery_status > 0 )
-        {
+        if ($request->delivery_status > 0) {
             $delivery_status = $request->delivery_status;
         }
 
-        if($request->sdate && $request->edate)
-        {
+        if ($request->sdate && $request->edate) {
             $sdate = $request->sdate;
             $edate = $request->edate;
         }
@@ -447,8 +578,7 @@ class AdminController extends BaseController
 
         $query = Product::query()->with("prices.shop_type");
 
-        if( $request->keyword /*&& $request->keyword_option*/ )
-        {
+        if ($request->keyword /*&& $request->keyword_option*/) {
             // $option = $request->keyword_option == 1 ? 'model_id' : ($request->keyword_option == 2 ? 'name' : '');
             // $query->where($option, $keyword);
             $query->where("model_id", $keyword)->orWhere("name", $keyword);
@@ -479,8 +609,7 @@ class AdminController extends BaseController
             'model_id.unique' => '모델아이디가 이미 존재합니다.'
         ];
         $validator = Validator::make($credentials, $rules, $messages);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('FAILED_CREATE_PRODUCT', $messages);
         }
@@ -489,13 +618,11 @@ class AdminController extends BaseController
         $product->model_id = $request->model_id;
         $product->name     = $request->name;
 
-        if( ! $product->save() )
-        {
+        if (!$product->save()) {
             return $this->sendError('FAILED_CREATE_PRODUCT');
         }
 
-        foreach($request->prices as $row)
-        {
+        foreach ($request->prices as $row) {
             $product->prices()->create([
                 'shop_type_id' => $row['shop_type']['id'],
                 'price'        => $row['price'] ? $row['price'] : 0
@@ -514,29 +641,23 @@ class AdminController extends BaseController
             'price.*' => 'required|integer'
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('FAILED_UPDATE_PRODUCT', $messages);
         }
 
         $product->name = $request->name;
 
-        if( !$product->save() )
-        {
+        if (!$product->save()) {
             return $this->sendError('FAILED_UPDATE_PRODUCT');
         }
 
-        foreach($request->prices as $row)
-        {
-            if( $priductPrice = $product->prices->where('shop_type_id', $row['shop_type_id'])->first() )
-            {
+        foreach ($request->prices as $row) {
+            if ($priductPrice = $product->prices->where('shop_type_id', $row['shop_type_id'])->first()) {
                 $priductPrice->update([
                     'price' => $row['price']
                 ]);
-            }
-            else
-            {
+            } else {
                 $product->prices()->create([
                     'shop_type_id' => $row['shop_type_id'],
                     'price'        => $row['price']
@@ -549,8 +670,7 @@ class AdminController extends BaseController
 
     public function deleteProduct(Request $request, Product $product)
     {
-        if( ! $product->delete() )
-        {
+        if (!$product->delete()) {
             return $this->sendError('FAILED_DELETE_PRODUCT');
         }
         return $this->sendResponse([]);
@@ -563,8 +683,7 @@ class AdminController extends BaseController
             'excel' => 'required|file|mimetypes:application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('PARAM_ERROR', $messages);
         }
@@ -577,34 +696,30 @@ class AdminController extends BaseController
 
         DB::beginTransaction();
 
-        foreach($_orders as $idx => $row)
-        {
-            if( $idx == 0 ) continue;
+        foreach ($_orders as $idx => $row) {
+            if ($idx == 0) continue;
 
-            if( ! $order_id = $row[2] ) continue;
-            if( ! $order = Order::find($order_id) ) continue;
+            if (!$order_id = $row[2]) continue;
+            if (!$order = Order::find($order_id)) continue;
 
             //delivery_provider row[0]
             //delivery_code row[1]
             //delivery_message row[15]
 
-            if( ! $delivery_provider = DeliveryProvider::where('name', trim($row[0]))->first() ) continue;
+            if (!$delivery_provider = DeliveryProvider::where('name', trim($row[0]))->first()) continue;
 
             $order->delivery_provider = $delivery_provider->id;
             $order->delivery_code     = trim($row[1]);
 
-            if( $order->delivery_provider && $order->delivery_code )
-            {
+            if ($order->delivery_provider && $order->delivery_code) {
                 $order->delivery_status = 3;
             }
 
-            if( $delivery_message = isset($row[15]) )
-            {
+            if ($delivery_message = isset($row[15])) {
                 $order->delivery_message = trim($row[15]);
             }
 
-            if( ! $order->save() )
-            {
+            if (!$order->save()) {
                 DB::rollback();
                 return $this->sendError('ERROR: DB 업데이트 실패');
             }
@@ -614,8 +729,7 @@ class AdminController extends BaseController
 
         DB::commit();
 
-        if( $orders->count() < 1 )
-        {
+        if ($orders->count() < 1) {
             return $this->sendError('ERROR: 상품등록 갯수가 없습니다.');
         }
 
@@ -632,17 +746,15 @@ class AdminController extends BaseController
             'delivery_status' => 'required|integer',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('PARAM_ERROR', $messages);
         }
-        
+
         // $shopType = new ShopType;
         // $shopType->delivery_price = 0; //$request->delivery_price;
-        
-        if( ! $shopType = ShopType::create($credentials) )
-        {
+
+        if (!$shopType = ShopType::create($credentials)) {
             return $this->sendError('CREATE_SHOP_TYPE_ERROR');
         }
 
@@ -659,16 +771,14 @@ class AdminController extends BaseController
             'delivery_price' => 'required|integer',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('PARAM_ERROR', $messages);
         }
 
         $shopType->delivery_price = $request->delivery_price;
-        
-        if( ! $shopType->save() )
-        {
+
+        if (!$shopType->save()) {
             return $this->sendError('UPDATE_SHOP_TYPE_ERROR');
         }
 
@@ -677,8 +787,7 @@ class AdminController extends BaseController
 
     public function deleteShopType(Request $request, ShopType $shopType)
     {
-        if( ! $shopType->delete() )
-        {
+        if (!$shopType->delete()) {
             return $this->sendError('DELETE_SHOP_TYPE_ERROR');
         }
 
@@ -706,14 +815,12 @@ class AdminController extends BaseController
             'content' => 'required',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('PARAM_ERROR', $messages);
         }
-        
-        if( ! $notice = Notice::create($credentials) )
-        {
+
+        if (!$notice = Notice::create($credentials)) {
             return $this->sendError('CREATE_NOTICE_ERROR');
         }
 
@@ -729,17 +836,15 @@ class AdminController extends BaseController
             //'is_active' => "bool"
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('PARAM_ERROR', $messages);
         }
-        
+
         // $notice->content = $request->content;
         // $notice->is_active = $request->is_active;
 
-        if( ! $notice->update($credentials) )
-        {
+        if (!$notice->update($credentials)) {
             return $this->sendError('UPDATE_NOTICE_ERROR');
         }
 
@@ -751,7 +856,7 @@ class AdminController extends BaseController
     {
         $count = $request->count ? $request->count : 100;
         $query = Order::query();
-        
+
         $_edate = $request->edate . ' 23:59:59';
         $query->where([
             ['created_at', '>=', $request->sdate],
@@ -772,12 +877,11 @@ class AdminController extends BaseController
             'edate' => 'required',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
             return $this->sendError('FAILED_DELETE_DB_ORDERS', $messages);
         }
-        
+
         //db backup
         Artisan::call('db:backup');
 
@@ -788,12 +892,11 @@ class AdminController extends BaseController
             ['created_at', '>=', $request->sdate],
             ['created_at', '<=', $_edate]
         ]);
-        if( !$query->delete() )
-        {
+        if (!$query->delete()) {
             return $this->sendError('FAILED_DELETE_DB_ORDERS');
         }
-        
-        
+
+
         return $this->sendResponse([]);
     }
 }

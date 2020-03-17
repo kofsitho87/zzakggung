@@ -40,6 +40,12 @@
       <template v-slot:footer>
         <div class="float-right">
           <b-button
+            to="/admin/products"
+            size="sm"
+          >
+            목록
+          </b-button>
+          <b-button
             @click="addAction"
             variant="primary"
             size="sm"

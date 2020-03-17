@@ -41,14 +41,12 @@ class AdminController extends Controller
 
     public function __construct(Request $request)
     {
-        
     }
 
     public function getShopTypes()
     {
         $shop_types = [];
-        foreach(ShopType::where('type', '!=', 'Z')->get() as $type)
-        {
+        foreach (ShopType::where('type', '!=', 'Z')->get() as $type) {
             $shop_types[$type->id] = $type->type;
         }
         return $shop_types;
@@ -58,8 +56,7 @@ class AdminController extends Controller
     {
         $user = Auth::user();
 
-        if( !$user->is_admin )
-        {
+        if (!$user->is_admin) {
             abort(401, 'This action is unauthorized.');
         }
     }
@@ -89,8 +86,7 @@ class AdminController extends Controller
         $this->checkAdmin();
 
         $shop_types = [];
-        foreach(ShopType::where('type', '!=', 'Z')->get() as $type)
-        {
+        foreach (ShopType::where('type', '!=', 'Z')->get() as $type) {
             $shop_types[$type->id] = $type->type;
         }
 
@@ -102,8 +98,7 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
 
-        if( !$user->delete() )
-        {
+        if (!$user->delete()) {
             return redirect()->back()->withErrors(['유저삭제실패']);
         }
 
@@ -113,7 +108,7 @@ class AdminController extends Controller
     public function updateUser(Request $request, User $user)
     {
         $this->checkAdmin();
-        
+
         $credentials = $request->only('name', 'email', 'shop_type');
         $rules = [
             'name' => "required|unique:users,name," . $user->id,
@@ -127,19 +122,17 @@ class AdminController extends Controller
             'email.unique'   => '이미 존재하는 아이디입니다.',
         ];
         $validator = Validator::make($credentials, $rules, $messages);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
         $user->name         = $request->name;
         $user->email        = $request->email;
         $user->shop_type_id = $request->shop_type;
-        
-        if( ! $user->save() )
-        {
-            return redirect()->back()->withErrors( 'DB_ERROR: 유저 업데이트 실패' );
+
+        if (!$user->save()) {
+            return redirect()->back()->withErrors('DB_ERROR: 유저 업데이트 실패');
         }
 
         return redirect()->back()->with(['success' => true]);
@@ -176,10 +169,9 @@ class AdminController extends Controller
             'password.min' => '비밀번호는 6글자 이상 입력해주세요!',
         ];
         $validator = Validator::make($credentials, $rules, $messages);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() )->withInput( $request->except('password') );
+            return redirect()->back()->withErrors($validator->errors())->withInput($request->except('password'));
         }
 
         $user = new User;
@@ -188,10 +180,9 @@ class AdminController extends Controller
         $user->email        = $request->email;
         $user->shop_type_id = $request->shop_type;
         $user->password     = bcrypt($request->password);
-        
-        if( ! $user->save() )
-        {
-            return redirect()->back()->withErrors( 'DB_ERROR: 유저 업데이트 실패' )->withInput( $request->except('password') );
+
+        if (!$user->save()) {
+            return redirect()->back()->withErrors('DB_ERROR: 유저 업데이트 실패')->withInput($request->except('password'));
         }
 
         return redirect()->back()->with(['success' => true]);
@@ -205,8 +196,7 @@ class AdminController extends Controller
         $query = Order::with('status');
 
         //날짜검색
-        if( isset($request->sdate) && isset($request->edate) && !empty($request->sdate) && !empty($request->edate) )
-        {
+        if (isset($request->sdate) && isset($request->edate) && !empty($request->sdate) && !empty($request->edate)) {
             $_edate = $request->edate . ' 23:59:59';
             $query->where([
                 ['created_at', '>=', $request->sdate],
@@ -214,13 +204,11 @@ class AdminController extends Controller
             ]);
         }
         //주문상태검색
-        if( isset($request->delivery_status) && $request->delivery_status > 0 )
-        {
+        if (isset($request->delivery_status) && $request->delivery_status > 0) {
             $query->where('delivery_status', $request->delivery_status);
         }
         //조건검색
-        if($keyword && $request->keyword_option)
-        {
+        if ($keyword && $request->keyword_option) {
             //keyword_option
             //1.receiver
             //2.phone
@@ -228,13 +216,12 @@ class AdminController extends Controller
             //4.id
             //5.model_id
 
-            switch($request->keyword_option)
-            {
+            switch ($request->keyword_option) {
                 case 1:
                     $search_receivers = explode(",", $keyword);
                     //$query->where('receiver', 'LIKE', "%${keyword}%");
-                    $query->where(function($q) use($search_receivers){
-                        foreach($search_receivers as $receiver){
+                    $query->where(function ($q) use ($search_receivers) {
+                        foreach ($search_receivers as $receiver) {
                             $receiver = trim($receiver);
                             $q->orWhere('receiver', 'LIKE', "%${receiver}%");
                         }
@@ -250,12 +237,12 @@ class AdminController extends Controller
                     $query->where('id', $keyword);
                     break;
                 case 5:
-                    $query->whereHas('product', function($q) use($keyword){
+                    $query->whereHas('product', function ($q) use ($keyword) {
                         $q->where('model_id', $keyword);
                     });
                     break;
                 case 6:
-                    $query->whereHas('user', function($q) use($keyword){
+                    $query->whereHas('user', function ($q) use ($keyword) {
                         $q->where('name', $keyword);
                     });
                     break;
@@ -280,15 +267,14 @@ class AdminController extends Controller
         $desc = $order_by == 1 ? 'ASC' : 'DESC';
         $orders = $query->orderBy('id', $desc)->paginate($cnt);
 
-        
-        $total_price = $orders->sum(function($order) {
+
+        $total_price = $orders->sum(function ($order) {
             $shop_type_id = $order->user->shop_type_id;
             return ($order->qty * $order->product->price($shop_type_id)) + $order->delivery_price - $order->minus_price;
         });
 
         $order_status = [];
-        foreach(OrderStatus::all() as $status)
-        {
+        foreach (OrderStatus::all() as $status) {
             $order_status[$status->id] = $status->name;
         }
 
@@ -306,13 +292,11 @@ class AdminController extends Controller
         $order_status = [];
         $delivery_providers = ['없음'];
 
-        foreach($orderStatus as $status)
-        {
-            $order_status[ $status->id ] = $status->name;
+        foreach ($orderStatus as $status) {
+            $order_status[$status->id] = $status->name;
         }
 
-        foreach(\App\Model\DeliveryProvider::all() as $provider)
-        {
+        foreach (\App\Model\DeliveryProvider::all() as $provider) {
             $delivery_providers[$provider->id] = $provider->name;
         }
 
@@ -329,47 +313,36 @@ class AdminController extends Controller
         // var_dump($delivery_status);
         // var_dump(!!$is_deleted);
         // die();
-        
-        if( !$orders = $request->orders )
-        {
+
+        if (!$orders = $request->orders) {
             return redirect()->back();
-        }
-        else if(!$delivery_status && !$comment && !$is_deleted)
-        {
+        } else if (!$delivery_status && !$comment && !$is_deleted) {
             return redirect()->back()->withErrors('업데이트할 정보가 없습니다.');
         }
-        
+
         $msg = "";
-        foreach($orders as $order_id => $value)
-        {
-            if( $order = Order::find($order_id) )
-            {
-                if( $is_deleted )
-                {
+        foreach ($orders as $order_id => $value) {
+            if ($order = Order::find($order_id)) {
+                if ($is_deleted) {
                     $order->delete();
                     $msg = "주문내역 삭제가 완료되었습니다.";
-                }
-                else 
-                {
-                    if( $delivery_status )
-                    {
+                } else {
+                    if ($delivery_status) {
                         $order->delivery_status = $delivery_status;
                     }
-                    if( $comment )
-                    {
+                    if ($comment) {
                         $order->comment = $comment;
                     }
                     $msg = "주문내역 업데이트가 완료되었습니다.";
-                    
+
                     //order 업데이트시 상태가 반품완료일때 업체에게 사용가능적립금 추가!(2)
-                    if( $order->save() && $delivery_status == 7 ){
+                    if ($order->save() && $delivery_status == 7) {
                         $trade = new Trade;
                         $trade->user_id = $order->user_id;
                         $trade->is_plus = true;
                         $trade->price   = $order->product->price($order->user->shop_type_id) * $order->qty;
                         $trade->content = "주문번호: " . $order->id . "번 수취인:" . $order->receiver . " 의 반품으로 인한 사용가능적립금 추가";
-                        if( ! $trade->save() )
-                        {
+                        if (!$trade->save()) {
                             return redirect()->back()->withErrors(['DB ERROR : 반품완료일때 업체에게 사용가능적립금 추가 실패']);
                         }
                     }
@@ -390,10 +363,9 @@ class AdminController extends Controller
             'minus_price'     => 'integer',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
         //반품완료일때 차감금액을 같이 업데이트한다
@@ -409,21 +381,16 @@ class AdminController extends Controller
         $order->delivery_code   = $request->delivery_code;
         $order->comment         = $request->comment;
 
-        if( $delivery_provider = $request->delivery_provider  )
-        {
-            if( $delivery_provider = DeliveryProvider::find($delivery_provider) )
-            {
+        if ($delivery_provider = $request->delivery_provider) {
+            if ($delivery_provider = DeliveryProvider::find($delivery_provider)) {
                 $order->delivery_provider = $delivery_provider->id;
             }
-        }
-        else
-        {
+        } else {
             $order->delivery_provider = null;
         }
 
-        if( ! $order->save() )
-        {
-            return redirect()->back()->withErrors( 'DB ERROR: 주문내역 업데이트 실패' );
+        if (!$order->save()) {
+            return redirect()->back()->withErrors('DB ERROR: 주문내역 업데이트 실패');
         }
 
         return redirect()->back()->with(['success' => true]);
@@ -431,12 +398,11 @@ class AdminController extends Controller
 
     public function updateOrderStatus(Request $request, Order $order, OrderStatus $status)
     {
-        $this->checkAdmin();   
+        $this->checkAdmin();
 
         $order->delivery_status = $status->id;
-        if( !$order->save() )
-        {
-            return redirect()->back()->withErrors( 'DB ERROR: 주문정보 업데이트 실패' );
+        if (!$order->save()) {
+            return redirect()->back()->withErrors('DB ERROR: 주문정보 업데이트 실패');
         }
 
         return redirect()->back()->with(['success' => true]);
@@ -444,15 +410,14 @@ class AdminController extends Controller
 
     public function updateOrderReceiver(Request $request, Order $order)
     {
-        $this->checkAdmin();   
+        $this->checkAdmin();
         $order->receiver = $request->receiver;
         $order->address = $request->address;
         $order->phone_1 = $request->phone_1;
         $order->phone_2 = $request->phone_2;
         $order->delivery_code = $request->delivery_code;
-        if( !$order->save() )
-        {
-            return redirect()->back()->withErrors( 'DB ERROR: 주문정보 업데이트 실패' );
+        if (!$order->save()) {
+            return redirect()->back()->withErrors('DB ERROR: 주문정보 업데이트 실패');
         }
 
         return redirect()->back()->with(['success' => true]);
@@ -462,12 +427,11 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
 
-        if( ! $order->delete() )
-        {
-            return redirect()->back()->withErrors( 'DB ERROR: 주문내역 삭제 실패' );
+        if (!$order->delete()) {
+            return redirect()->back()->withErrors('DB ERROR: 주문내역 삭제 실패');
         }
 
-        return redirect('/admin/orders')->with(['success' => true, 'msg'=> '주문내역 삭제 성공']);
+        return redirect('/admin/orders')->with(['success' => true, 'msg' => '주문내역 삭제 성공']);
     }
 
     public function products(Request $request)
@@ -480,13 +444,10 @@ class AdminController extends Controller
 
         $query = Product::query();
 
-        if( $request->keyword && $request->keyword_option )
-        {
+        if ($request->keyword && $request->keyword_option) {
             $option = $request->keyword_option == 1 ? 'model_id' : ($request->keyword_option == 2 ? 'name' : '');
             $query->where($option, $keyword);
-        }
-        else
-        {
+        } else {
             $keyword = '';
         }
 
@@ -498,7 +459,7 @@ class AdminController extends Controller
 
     public function product(Request $request, Product $product)
     {
-        $this->checkAdmin();    
+        $this->checkAdmin();
         $shop_types = ShopType::where('type', '!=', 'Z')->get();
         $data = compact('product', 'shop_types');
         return view('admin_product', $data);
@@ -508,9 +469,8 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
 
-        if( !$product->delete() )
-        {
-            return redirect()->back()->withErrors( 'DB ERROR: 상품정보 삭제 실패' );
+        if (!$product->delete()) {
+            return redirect()->back()->withErrors('DB ERROR: 상품정보 삭제 실패');
         }
 
         return redirect('/admin/products');
@@ -518,7 +478,7 @@ class AdminController extends Controller
 
     public function updateProduct(Request $request, Product $product)
     {
-        $this->checkAdmin();    
+        $this->checkAdmin();
 
         $credentials = $request->only('name');
         $rules = [
@@ -526,29 +486,23 @@ class AdminController extends Controller
             'price.*' => 'required|integer'
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
         $product->name = $request->name;
 
-        if( !$product->save() )
-        {
-            return redirect()->back()->withErrors( 'DB ERROR: 상품정보 업데이트 실패' );
+        if (!$product->save()) {
+            return redirect()->back()->withErrors('DB ERROR: 상품정보 업데이트 실패');
         }
 
-        foreach($request->prices as $typeId => $price)
-        {
-            if( $priductPrice = $product->prices->where('shop_type_id', $typeId)->first() )
-            {
+        foreach ($request->prices as $typeId => $price) {
+            if ($priductPrice = $product->prices->where('shop_type_id', $typeId)->first()) {
                 $priductPrice->update([
                     'price' => $price
                 ]);
-            }
-            else
-            {
+            } else {
                 $product->prices()->create([
                     'shop_type_id' => $typeId,
                     'price'        => $price
@@ -561,8 +515,8 @@ class AdminController extends Controller
 
     public function createProductView(Request $request)
     {
-        $this->checkAdmin();   
-        
+        $this->checkAdmin();
+
         // $credentials = $request->only('model_id', 'name');
         // $rules = [
         //     'model_id' => 'required|unique:products',
@@ -584,8 +538,8 @@ class AdminController extends Controller
 
     public function createProduct(Request $request)
     {
-        $this->checkAdmin();   
-        
+        $this->checkAdmin();
+
         $credentials = $request->only('model_id', 'name');
         $rules = [
             'model_id' => 'required|unique:products',
@@ -596,23 +550,20 @@ class AdminController extends Controller
             'model_id.unique' => '모델아이디가 이미 존재합니다.'
         ];
         $validator = Validator::make($credentials, $rules, $messages);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() )->withInput();
+            return redirect()->back()->withErrors($validator->errors())->withInput();
         }
 
         $product = new Product;
         $product->model_id = $request->model_id;
         $product->name     = $request->name;
 
-        if( ! $product->save() )
-        {
-            return redirect()->back()->withErrors( 'DB ERROR: 상품등록 실패' );
+        if (!$product->save()) {
+            return redirect()->back()->withErrors('DB ERROR: 상품등록 실패');
         }
 
-        foreach($request->prices as $typeId => $price)
-        {
+        foreach ($request->prices as $typeId => $price) {
             $product->prices()->create([
                 'shop_type_id' => $typeId,
                 'price'        => $price ? $price : 0
@@ -625,17 +576,16 @@ class AdminController extends Controller
 
     public function createProductByExcel(Request $request)
     {
-        $this->checkAdmin();   
+        $this->checkAdmin();
 
         $credentials = $request->only('excel');
         $rules = [
             'excel' => 'required|file|mimetypes:application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
         $products = \Maatwebsite\Excel\Facades\Excel::toArray(new \App\Imports\ProductsImport,  $request->file('excel'));
@@ -645,18 +595,16 @@ class AdminController extends Controller
 
         DB::beginTransaction();
 
-        foreach($_products as $idx => $row)
-        {
-            if( $idx == 0 ) continue;
+        foreach ($_products as $idx => $row) {
+            if ($idx == 0) continue;
 
-            if( !isset($row[0]) && !isset($row[1]) ) 
+            if (!isset($row[0]) && !isset($row[1]))
                 continue;
 
             $model_id = trim($row[0]);
             $name     = trim($row[1]);
 
-            if( Product::where('model_id', $model_id)->first() )
-            {
+            if (Product::where('model_id', $model_id)->first()) {
                 continue;
             }
 
@@ -664,21 +612,17 @@ class AdminController extends Controller
             $product->model_id = $model_id;
             $product->name = $name;
 
-            if( ! $product->save() )
-            {
+            if (!$product->save()) {
                 DB::rollback();
-                return redirect()->back()->withErrors( 'DB ERROR: 상품등록 실패' );
+                return redirect()->back()->withErrors('DB ERROR: 상품등록 실패');
             }
 
-            foreach($shop_types as $idx => $type)
-            {
+            foreach ($shop_types as $idx => $type) {
                 $price = 0;
-                if( isset( $row[$idx + 2] ) )
-                {
+                if (isset($row[$idx + 2])) {
                     $priceVal = $row[$idx + 2];
-                    
-                    if( is_numeric($priceVal) )
-                    {
+
+                    if (is_numeric($priceVal)) {
                         $price = trim($priceVal);
                     }
                 }
@@ -693,9 +637,8 @@ class AdminController extends Controller
 
         DB::commit();
 
-        if( $products->count() < 1 )
-        {
-            return redirect()->back()->withErrors( 'ERROR: 상품등록 갯수가 없습니다.' );
+        if ($products->count() < 1) {
+            return redirect()->back()->withErrors('ERROR: 상품등록 갯수가 없습니다.');
         }
 
         return redirect()->back()->with(['success' => true]);
@@ -703,17 +646,16 @@ class AdminController extends Controller
 
     public function orderImport(Request $request)
     {
-        $this->checkAdmin();   
+        $this->checkAdmin();
 
         $credentials = $request->only('excel');
         $rules = [
             'excel' => 'required|file|mimetypes:application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
         $orders = \Maatwebsite\Excel\Facades\Excel::toArray(new \App\Imports\OrdersImport,  $request->file('excel'));
@@ -724,36 +666,32 @@ class AdminController extends Controller
 
         DB::beginTransaction();
 
-        foreach($_orders as $idx => $row)
-        {
-            if( $idx == 0 ) continue;
+        foreach ($_orders as $idx => $row) {
+            if ($idx == 0) continue;
 
-            if( ! $order_id = $row[2] ) continue;
-            if( ! $order = Order::find($order_id) ) continue;
+            if (!$order_id = $row[2]) continue;
+            if (!$order = Order::find($order_id)) continue;
 
             //delivery_provider row[0]
             //delivery_code row[1]
             //delivery_message row[15]
 
-            if( ! $delivery_provider = DeliveryProvider::where('name', trim($row[0]))->first() ) continue;
+            if (!$delivery_provider = DeliveryProvider::where('name', trim($row[0]))->first()) continue;
 
             $order->delivery_provider = $delivery_provider->id;
             $order->delivery_code     = trim($row[1]);
 
-            if( $order->delivery_provider && $order->delivery_code )
-            {
+            if ($order->delivery_provider && $order->delivery_code) {
                 $order->delivery_status = 3;
             }
 
-            if( $delivery_message = isset($row[15]) )
-            {
+            if ($delivery_message = isset($row[15])) {
                 $order->delivery_message = trim($row[15]);
             }
 
-            if( ! $order->save() )
-            {
+            if (!$order->save()) {
                 DB::rollback();
-                return redirect()->back()->withErrors( 'ERROR: DB 업데이트 실패' );
+                return redirect()->back()->withErrors('ERROR: DB 업데이트 실패');
             }
 
             $orders[] = $order;
@@ -761,9 +699,8 @@ class AdminController extends Controller
 
         DB::commit();
 
-        if( $orders->count() < 1 )
-        {
-            return redirect()->back()->withErrors( 'ERROR: 상품등록 갯수가 없습니다.' );
+        if ($orders->count() < 1) {
+            return redirect()->back()->withErrors('ERROR: 상품등록 갯수가 없습니다.');
         }
 
         return redirect()->back()->with(['success' => true]);
@@ -771,7 +708,7 @@ class AdminController extends Controller
 
     public function orderExport(Request $request)
     {
-        $this->checkAdmin();   
+        $this->checkAdmin();
 
         $delivery_status = null;
         $sdate           = null;
@@ -781,13 +718,11 @@ class AdminController extends Controller
         $order_by        = $request->order_by;
         $count           = $request->count;
 
-        if($request->delivery_status > 0 )
-        {
+        if ($request->delivery_status > 0) {
             $delivery_status = $request->delivery_status;
         }
 
-        if($request->sdate && $request->edate)
-        {
+        if ($request->sdate && $request->edate) {
             $sdate = $request->sdate;
             $edate = $request->edate;
         }
@@ -797,11 +732,10 @@ class AdminController extends Controller
 
     public function shopTypes(Request $request)
     {
-        $this->checkAdmin();   
+        $this->checkAdmin();
 
         $order_status = [];
-        foreach(OrderStatus::all() as $status)
-        {
+        foreach (OrderStatus::all() as $status) {
             $order_status[$status->id] = $status->name;
         }
 
@@ -813,12 +747,10 @@ class AdminController extends Controller
 
     public function updateShopTypes(Request $request)
     {
-        $this->checkAdmin();   
+        $this->checkAdmin();
 
-        foreach($request->delivery_price as $id => $price )
-        {
-            if( $shopType = ShopType::find($id) )
-            {
+        foreach ($request->delivery_price as $id => $price) {
+            if ($shopType = ShopType::find($id)) {
                 $shopType->delivery_price = $price;
                 $shopType->save();
             }
@@ -829,7 +761,7 @@ class AdminController extends Controller
 
     public function createShopTypes(Request $request)
     {
-        $this->checkAdmin();   
+        $this->checkAdmin();
 
         $credentials = $request->only('type', 'delivery_price', 'delivery_status');
         $rules = [
@@ -838,40 +770,34 @@ class AdminController extends Controller
             'delivery_status' => 'required|integer',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
-        if( ! ShopType::create($credentials) )
-        {
+        if (!ShopType::create($credentials)) {
             return redirect()->back()->withErrors(['DB ERROR : 배송사 생성실패']);
         }
-        
+
         return redirect()->back()->with(['success' => true]);
     }
 
     public function deleteShopType(Request $request, ShopType $shop)
     {
-        $this->checkAdmin();   
+        $this->checkAdmin();
 
-        if( User::whereHas('shop_type', function($q) use($shop){
+        if (User::whereHas('shop_type', function ($q) use ($shop) {
             $q->where('shop_type_id', $shop->id);
-        })->first() )
-        {
-            return redirect()->back()->withErrors( '해당타입의 거래처가 있어 삭제할수 없습니다.' );
-        }
-        else if( Order::whereHas('user', function($q) use($shop){
+        })->first()) {
+            return redirect()->back()->withErrors('해당타입의 거래처가 있어 삭제할수 없습니다.');
+        } else if (Order::whereHas('user', function ($q) use ($shop) {
             $q->where('shop_type_id', $shop->id);
-        })->first() )
-        {
-            return redirect()->back()->withErrors( '해당타입의 주문건이 있어 삭제할수 없습니다.' );
+        })->first()) {
+            return redirect()->back()->withErrors('해당타입의 주문건이 있어 삭제할수 없습니다.');
         }
 
-        if( ! $shop->delete() )
-        {
-            return redirect()->back()->withErrors( 'ERROR: 샵타입 삭제 실패' );
+        if (!$shop->delete()) {
+            return redirect()->back()->withErrors('ERROR: 샵타입 삭제 실패');
         }
 
         return redirect()->back()->with(['success' => true]);
@@ -884,8 +810,7 @@ class AdminController extends Controller
         $providers = DeliveryProvider::all();
         $delivery_providers = [];
 
-        foreach($providers as $provider)
-        {
+        foreach ($providers as $provider) {
             $delivery_providers[$provider->id] = $provider->name;
         }
 
@@ -902,16 +827,14 @@ class AdminController extends Controller
             'provider' => 'required',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
         $provider = new DeliveryProvider;
         $provider->name = $request->provider;
-        if( ! $provider->save() )
-        {
+        if (!$provider->save()) {
             return redirect()->back()->withErrors(['DB ERROR : 배송사 생성실패']);
         }
 
@@ -928,18 +851,16 @@ class AdminController extends Controller
         $read_trades = Trade::where('user_id', $user->id)
             ->orderByDesc('id')
             ->paginate($count);
-        
+
         //수정된 부분
         $all_trades = Trade::where('user_id', $user->id)->get();
         $trades = [];
-        foreach($all_trades as $idx => $trade)
-        {
+        foreach ($all_trades as $idx => $trade) {
             $trade->plus = $trade->is_plus ? $trade->price : 0;
             $trade->minus = $trade->is_plus ? 0 : $trade->price;
             $trade->change = $trade->plus - $trade->minus;
 
-            if( $idx > 0 )
-            {
+            if ($idx > 0) {
                 $change = $all_trades[$idx - 1]->change;
                 $trade->change = $change + $trade->change;
             }
@@ -967,10 +888,9 @@ class AdminController extends Controller
             'content'    => 'required'
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
         $trade = new Trade;
@@ -982,8 +902,7 @@ class AdminController extends Controller
 
         //dd($trade->getAttributes());
 
-        if( ! $trade->save() )
-        {
+        if (!$trade->save()) {
             return redirect()->back()->withErrors(['DB ERROR : 생성실패']);
         }
 
@@ -999,23 +918,19 @@ class AdminController extends Controller
             'trades.*'    => 'required',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
         //dd($request->trades);
 
-        if( !$request->trades || !is_array($request->trades) )
-        {
+        if (!$request->trades || !is_array($request->trades)) {
             return redirect()->back()->withErrors(['삭제할 내역이 없음']);
         }
 
-        foreach($request->trades as $idx => $row)
-        {
-            if( $trade = Trade::find($idx) )
-            {
+        foreach ($request->trades as $idx => $row) {
+            if ($trade = Trade::find($idx)) {
                 $trade->delete();
             }
         }

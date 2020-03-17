@@ -5,7 +5,7 @@
         <b-form-group>
           <b-form-input
             v-model="keyword"
-            placeholder="검색어"
+            placeholder="모델번호나 상품이름으로 검색가능합니다."
           />
         </b-form-group>
       </b-form>
@@ -50,14 +50,35 @@
 
       <template v-slot:header>
         상품관리
-        <b-button
-          class="float-right"
-          variant="primary"
-          size="sm"
-          :to="{name: 'AdminCreateProduct'}"
-        >
-          상품생성
-        </b-button>
+        <div class="float-right">
+          <b-button
+            variant="primary"
+            size="sm"
+            :to="{name: 'AdminCreateProduct'}"
+          >
+            새상품등록
+          </b-button>
+          <a
+            href="/admin/products/example"
+            class="btn btn-success btn-sm"
+          >상품등록샘플다운로드</a>
+          <b-button
+            variant="info"
+            size="sm"
+            @click="$refs.excel.$el.querySelector('input').click()"
+            accept=".xlsx"
+            :disabled="isLoading"
+          >
+            엑셀파일로 상품 대량 업로드
+          </b-button>
+          <b-form-file
+            ref="excel"
+            v-model="excel"
+            class="d-none"
+            @change="uploadExcelAction"
+            :disabled="isLoading"
+          />
+        </div>
       </template>
       <template v-slot:footer>
         <!-- <b-pagination
@@ -108,6 +129,7 @@ export default {
       total: 0,
       totalPage: 1,
       isLoading: false,
+      excel: null
     }
   },
   watch: {
@@ -156,6 +178,40 @@ export default {
     linkGen(pageNum) {
       return `?page=${pageNum}`
     },
+    async uploadExcelAction(){
+      let excel = event.currentTarget.files[0]
+      if(!excel){
+        return
+      }
+      this.isLoading = true
+      
+      try {
+        var formData = new FormData()
+        formData.append("excel", excel)
+        await this.$store.dispatch("post", {
+          api: "products/upload",
+          payload: formData
+        })
+
+        this.searchAction()
+        
+        this.$notify({
+          type: "success",
+          group: "top-center",
+          title: "상품이 등록 되었습니다."
+        })
+
+      } catch (e){
+        this.$notify({
+          type: "error",
+          group: "top-center",
+          title: e.message
+        })
+      } finally {
+        this.isLoading = false
+        this.excel = null
+      }
+    }
   }
 }
 </script>

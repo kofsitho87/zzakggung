@@ -13,17 +13,29 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::group(['middleware' => 'jwt.auth', 'prefix' => 'admin'], function(){
+Route::group(['middleware' => 'jwt.auth', 'prefix' => 'admin'], function () {
+    //auth
+    Route::post('/auth/changePw', 'Api\AdminController@changePw');
+
+    //history
+    Route::get('/history', 'UpdateHistoryController@getItems');
+    Route::post('/history', 'UpdateHistoryController@create');
+
     //config
     Route::get('/config/shopTypes', 'Api\AdminController@shopTypes');
     Route::get('/config/deliveryProviders', 'Api\AdminController@deliveryProviders');
-    
+    Route::post('/config/deliveryProviders', 'Api\AdminController@createDeliveryProviders');
+
     //get users
     Route::get('/users', 'Api\AdminController@users');
     //get user
     Route::get('/user/{user}', 'Api\AdminController@user')->where('user', '[0-9]+');
     //update user
     Route::put('/user/{user}', 'Api\AdminController@updateUser')->where('user', '[0-9]+');
+    //create user
+    Route::post('/user', 'Api\AdminController@createUser');
+    //delete user
+    Route::delete('/user/{user}', 'Api\AdminController@deleteUser')->where('user', '[0-9]+');
 
     //get user trades
     Route::get('/users/{user}/trades', 'Api\AdminController@userTrades')->where('user', '[0-9]+');
@@ -53,7 +65,7 @@ Route::group(['middleware' => 'jwt.auth', 'prefix' => 'admin'], function(){
     Route::delete('/products/{product}', 'Api\AdminController@deleteProduct')->where('order', '[0-9]+');
     //create product
     Route::post('/products', 'Api\AdminController@createProduct');
-    
+
     //update order receiver
     Route::put('/orders/{order}/receiver', 'Api\AdminController@updateOrderReceiver')->where('order', '[0-9]+');
 
@@ -79,6 +91,9 @@ Route::group(['middleware' => 'jwt.auth', 'prefix' => 'admin'], function(){
     //get db list
     Route::get('/db/raw_orders', 'Api\AdminController@rawOrders');
     Route::post('/db/delete_all', 'Api\AdminController@deleteAllOrders');
+
+
+    Route::post('/products/upload', 'Api\AdminController@createProductByExcel');
 });
 
 Route::post('/auth/login', 'AuthController@login');

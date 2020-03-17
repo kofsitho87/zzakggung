@@ -49,14 +49,22 @@
         <strong>{{ user.name }}</strong> 거래처
       </template>
       <template v-slot:footer>
-        <b-button
-          variant="info"
-          class="float-right"
-          @click="updateUser"
-          :disabled="isLoading"
-        >
-          업데이트
-        </b-button>
+        <div class="float-right">
+          <b-button
+            variant="danger"
+            @click="deleteUser"
+            :disabled="isLoading"
+          >
+            삭제
+          </b-button>
+          <b-button
+            variant="info"
+            @click="updateUser"
+            :disabled="isLoading"
+          >
+            업데이트
+          </b-button>
+        </div>
       </template>
     </b-card>
   </b-container>
@@ -73,7 +81,13 @@ export default {
   },
   computed: {
     shopTypes(){
-      return this.$store.getters.shopTypes
+      let shopTypes = this.$store.getters.shopTypes
+      return [{value: null, text: "거래처타입"}, ...shopTypes.map(row => {
+        return {
+          value: row.id,
+          text: row.type
+        }
+      })]
     }
   },
   mounted(){
@@ -121,7 +135,29 @@ export default {
       } finally {
         this.isLoading = false
       }
-    }
+    },
+    async deleteUser(){
+      this.isLoading = true
+      try {
+        await this.$store.dispatch("delete", {
+          api: `user/${this.userId}`
+        })
+        this.$notify({
+          group: "top-center",
+          type: "success",
+          title: "유저 삭제 성공"
+        })
+        this.$router.go(-1)
+      } catch (e){
+        this.$notify({
+          group: "top-center",
+          type: "error",
+          title: e.message
+        })
+      } finally {
+        this.isLoading = false
+      }
+    },
   }
 }
 </script>
