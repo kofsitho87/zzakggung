@@ -818,7 +818,7 @@ export default {
           payload: {
             delivery_status: 4, 
             minus_price, 
-            delivery_provider: delivery_provider.id, 
+            delivery_provider: delivery_provider ? delivery_provider.id : null, 
             delivery_code, 
             comment
           }
