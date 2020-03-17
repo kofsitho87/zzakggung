@@ -20,6 +20,7 @@ Route::group(['middleware' => 'jwt.auth', 'prefix' => 'admin'], function () {
     //history
     Route::get('/history', 'UpdateHistoryController@getItems');
     Route::post('/history', 'UpdateHistoryController@create');
+    Route::put('/history/{history}', 'UpdateHistoryController@update')->where('history', '[0-9]+');
 
     //config
     Route::get('/config/shopTypes', 'Api\AdminController@shopTypes');

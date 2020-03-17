@@ -16,7 +16,8 @@ class CreateUpdateHistoryTable extends Migration
         Schema::create('update_history', function (Blueprint $table) {
             $table->increments('id');
             $table->string('title');
-            $table->text('desc');
+            $table->text('desc')->nullable();
+            $table->enum('status', ['등록', '진행', '완료'])->default('등록');
             $table->timestamps();
         });
     }

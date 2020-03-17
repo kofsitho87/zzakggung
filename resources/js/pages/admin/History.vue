@@ -12,13 +12,13 @@
             :state="$v.form.title.$dirty ? !$v.form.title.$error : null"
           />
         </b-form-group>
-        <b-form-group>
+        <!-- <b-form-group>
           <b-textarea
             v-model="form.desc"
             :state="$v.form.desc.$dirty ? !$v.form.desc.$error : null"
             placeholder="내용"
           />
-        </b-form-group>
+        </b-form-group> -->
         <div class="float-right">
           <b-button
             variant="primary"
@@ -40,6 +40,13 @@
         <template v-slot:cell(index)="data">
           {{ (page-1) * perPage + (data.index + 1) }}
         </template>
+        <template v-slot:cell(status)="data">
+          <b-select
+            :value="data.value"
+            :options="statusOptions"
+            @change="updateStatus(data.item)"
+          />
+        </template>
       </b-table>
     </b-card>
   </b-container>
@@ -55,7 +62,7 @@ export default {
       isLoading: false,
       form: {
         title: null,
-        desc: null
+        //desc: null
       },
       perPage: 100,
       page: 1,
@@ -70,9 +77,13 @@ export default {
           label: "제목"
         },
         {
-          key: "desc",
-          label: "내용"
+          key: "status",
+          label: "상태"
         },
+        // {
+        //   key: "desc",
+        //   label: "내용"
+        // },
         {
           key: "created_at",
           label: "생성시간"
@@ -85,15 +96,52 @@ export default {
       title: {
         required
       },
-      desc: {
-        required,
-      }
+      // desc: {
+      //   required,
+      // }
+    }
+  },
+  computed: {
+    statusOptions(){
+      return [
+        "등록",
+        "진행",
+        "완료"
+      ]
     }
   },
   mounted(){
     this.getItems()
   },
   methods: {
+    async updateStatus(item){
+      console.log(item)
+      console.log(event.target.value)
+      
+      this.isLoading = true
+      try {
+        await this.$store.dispatch("put", {
+          api: `history/${item.id}`,
+          payload: {
+            status: event.target.value
+          }
+        })
+        this.$notify({
+          type: "success",
+          group: "top-center",
+          title: "상태가 변경 되었습니다."
+        })
+        
+      } catch(e) {
+        this.$notify({
+          type: "error",
+          group: "top-center",
+          title: e.message
+        })
+      } finally {
+        this.isLoading = false
+      }
+    },
     async getItems(){
       this.isLoading = true
       try {
