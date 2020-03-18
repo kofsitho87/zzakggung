@@ -873,7 +873,7 @@ class AdminController extends BaseController
             $uploadedFile,
             $filename
         );
-        $imageUrl = "/" . $imageUrl;
+        $imageUrl = "/storage/" . $imageUrl;
         $data = compact('imageUrl');
         return $this->sendResponse($data);
     }
