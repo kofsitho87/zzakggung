@@ -551,6 +551,7 @@ export default {
             count: this.form.count,
             order_by: this.form.order_by,
             delivery_status: this.form.delivery_status,
+            page: this.page,
           }
         })
       
