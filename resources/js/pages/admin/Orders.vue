@@ -384,15 +384,16 @@ export default {
     OrderListSimpleGroup
   },
   data(){
+    let {query} = this.$route
     return {
       form: {
-        order_by: 0,
-        delivery_status: 0,
-        sdate: null,
-        edate: null,
-        keyword_option: 0,
-        keyword: null,
-        count: 0,
+        order_by: query.order_by || 0,
+        delivery_status: query.delivery_status || 0,
+        sdate: query.sdate || null,
+        edate: query.edate || null,
+        keyword_option: query.keyword_option || 0,
+        keyword: query.keyword || null,
+        count: query.count || 0,
         order_status: 0,
         comment: null,
         refund: 0
@@ -539,6 +540,20 @@ export default {
           return {text: order_status[key], value: key}
         })
         this.order_status = [{text: "전체", value: 0}, ...orderStatus]
+
+
+        this.$router.push({
+          query: {
+            sdate: this.form.sdate,
+            edate: this.form.edate,
+            keyword_option: this.form.keyword_option,
+            keyword: this.form.keyword,
+            count: this.form.count,
+            order_by: this.form.order_by,
+            delivery_status: this.form.delivery_status,
+          }
+        })
+      
       } catch (e){
         console.log(e)
       } finally {
