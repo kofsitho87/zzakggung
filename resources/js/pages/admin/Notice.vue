@@ -1,22 +1,25 @@
 <template>
   <b-container>
-    <h5>공지사항</h5>
-    <div>
-      <vue-editor
-        id="editor"
-        use-custom-image-handler
-        v-model="notice.content"
-      />
-      <div class="float-right">
-        <b-button
-          variant="primary"
-          @click="updateNotice"
-          :disabled="!notice.content || isLoading"
-        >
-          저장
-        </b-button>
+    <b-card header="공지사항">
+      <div>
+        <vue-editor
+          id="editor"
+          use-custom-image-handler
+          :editor-toolbar="customToolbar"
+          v-model="notice.content"
+          @image-added="handleImageAdded"
+        />
+        <div class="float-right mt-2">
+          <b-button
+            variant="primary"
+            @click="updateNotice"
+            :disabled="!notice.content || isLoading"
+          >
+            저장
+          </b-button>
+        </div>
       </div>
-    </div>
+    </b-card>
     <!-- <div class="mt-5">
       <b-card header="공지사항 목록">
         <b-table
@@ -73,6 +76,17 @@ export default {
   },
   data() {
     return {
+      customToolbar: [
+        [{ font: [] }],
+        [{ header: [false, 1, 2, 3, 4, 5, 6] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        [{ "align": ""},{ "align": "justify"}, { "align": "right" }],
+        ["blockquote", "code-block"],
+        [{ direction: "rtl" }],
+        ["image"],
+        ["clean"]
+      ],
       fields: [
         {
           key: "index",
@@ -163,6 +177,32 @@ export default {
           type: "success",
           title: "저장되었습니다."
         })
+      } catch (e){
+        this.$notify({
+          group: "top-center",
+          type: "error",
+          title: e.message
+        })
+      } finally {
+        this.isLoading = false
+      }
+    },
+    async handleImageAdded(file, Editor, cursorLocation, resetUploader){
+      console.log(file)
+      
+      this.isLoading = true
+      try {
+        var formData = new FormData()
+        formData.append("image", file)
+        let {imageUrl} = await this.$store.dispatch("post", {
+          api: "notices/upload/image",
+          payload: formData
+        })
+        
+        
+        Editor.insertEmbed(cursorLocation, "image", imageUrl)
+        resetUploader()
+
       } catch (e){
         this.$notify({
           group: "top-center",

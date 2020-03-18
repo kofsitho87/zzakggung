@@ -46,5 +46,6 @@ Route::group(['middleware' => 'auth'], function () {
 
 Route::prefix('admin')->group(function () {
   Route::get('/orders/export', 'Api\AdminController@orderExport')->name('admin.orders.export');
+  Route::get('/', 'SpaController@index')->where('any', '.*');
+  Route::get('{any}', 'SpaController@index')->where('any', '.*');
 });
-Route::get('{any}', 'SpaController@index')->where('any', '.*');

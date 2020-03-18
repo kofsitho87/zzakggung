@@ -10,6 +10,7 @@ use Validator;
 use DB;
 use Artisan;
 use Auth;
+use Storage;
 
 use App\Model\User;
 use App\Model\Order;
@@ -849,6 +850,31 @@ class AdminController extends BaseController
         }
 
         $data = compact('notice');
+        return $this->sendResponse($data);
+    }
+
+    public function uploadNoticeImage(Request $request)
+    {
+        $credentials = $request->only('image');
+        $rules = [
+            'image' => 'required|image|mimes:jpeg,jpg,png,gif',
+        ];
+        $validator = Validator::make($credentials, $rules);
+        if ($validator->fails()) {
+            $messages = $validator->errors()->messages();
+            return $this->sendError('FAILED_UPLOAD_EXCEL', $messages);
+        }
+
+        $uploadedFile = $request->file("image");
+        $filename = time() . "_" . $uploadedFile->getClientOriginalName();
+
+        $imageUrl = Storage::disk('public')->putFileAs(
+            '/upload',
+            $uploadedFile,
+            $filename
+        );
+        $imageUrl = "/" . $imageUrl;
+        $data = compact('imageUrl');
         return $this->sendResponse($data);
     }
 
