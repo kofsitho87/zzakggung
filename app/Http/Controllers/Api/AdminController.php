@@ -252,7 +252,7 @@ class AdminController extends BaseController
 
     public function userTrades(Request $request, User $user)
     {
-        $count = 100;
+        $count = 50;
         $page = $request->page;
 
         $read_trades = Trade::where('user_id', $user->id)
