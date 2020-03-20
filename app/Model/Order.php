@@ -8,21 +8,21 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Order extends Model
 {
     //use SoftDeletes;
-    
-    protected $fillable = [
-        'user_id', 
-        'product_id', 
-        'option',
-        'qty', 
-        'receiver', 
-        'phone_1', 
-        'phone_2', 
-        'zipcode', 
-        'address', 
-        'delivery_message', 
-        'delivery_price', 
 
-        'product_name', 
+    protected $fillable = [
+        'user_id',
+        'product_id',
+        'option',
+        'qty',
+        'receiver',
+        'phone_1',
+        'phone_2',
+        'zipcode',
+        'address',
+        'delivery_message',
+        'delivery_price',
+
+        'product_name',
         'price',
         'model_id',
         'can_upload',
@@ -30,16 +30,19 @@ class Order extends Model
         'set_master',
         'set_count',
     ];
-    
-    protected $appends = ['product_price'];
-    // protected $attributes = [
-    //     'productPrice'
-    // ];
 
-    // public function getProductAttribute()
-    // {
-    //     return $this->product;
-    // }
+
+    protected $appends = ['product_price'];
+
+    public static $withoutAppends = false;
+    protected function getArrayableAppends()
+    {
+        if (self::$withoutAppends) {
+            return [];
+        }
+        return parent::getArrayableAppends();
+    }
+
 
     public function getProductPriceAttribute()
     {

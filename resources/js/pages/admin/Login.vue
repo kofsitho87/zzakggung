@@ -89,7 +89,7 @@ export default {
         const payload = this.form
         let { success, error } = await this.$store.dispatch("login", payload)
         if (success) {
-          this.$router.push({name: "adminHome"})
+          this.$router.push({name: "AdminIndex"})
         } else {
           this.$notify({
             type: "error",

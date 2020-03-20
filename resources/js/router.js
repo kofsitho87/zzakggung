@@ -6,6 +6,7 @@ Vue.use(VueRouter)
 
 import AdminLogin from "./pages/admin/Login"
 
+import AdminIndex from "./pages/admin/index"
 import AdminHome from "./pages/admin/Home"
 import AdminUsers from "./pages/admin/Users"
 import AdminUser from "./pages/admin/User"
@@ -44,8 +45,8 @@ const router = new VueRouter({
     },
     {
       path: "/admin",
-      component: AdminHome,
-      name: "adminHome",
+      component: AdminIndex,
+      name: "AdminIndex",
       beforeEnter: requireAuth,
       meta: {
         title: "관리자"
@@ -53,10 +54,10 @@ const router = new VueRouter({
       children: [
         {
           path: "/",
-          component: AdminUsers,
-          name: "AdminUsers",
+          component: AdminHome,
+          name: "AdminHome",
           meta: {
-            title: "거래처관리"
+            title: "홈"
           }
         },
         {

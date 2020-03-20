@@ -419,7 +419,10 @@ class AdminController extends BaseController
         $cnt = $request->count ? $page_counts[$request->count] : $page_counts[0];
 
         $desc = $order_by == 1 ? 'ASC' : 'DESC';
-        $orders = $query->orderBy('id', $desc)->paginate($cnt);
+        $orders = $query
+            ->orderBy('id', $desc)
+            //->append('product_price')
+            ->paginate($cnt);
 
 
         $total_price = $orders->sum(function ($order) {

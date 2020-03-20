@@ -92,6 +92,16 @@ Route::group(['middleware' => 'jwt.auth', 'prefix' => 'admin'], function () {
     Route::post('/notices/upload/image', 'Api\AdminController@uploadNoticeImage');
 
 
+    //statics
+    //가장많이 팔린 상품
+    Route::get('/statistics/top_products', 'Api\StatisticsController@topProducts');
+    //가장 주문이 많은 업체
+    Route::get('/statistics/top_order_by_provider', 'Api\StatisticsController@topOrderByProvider');
+    //주문이 가장 많은 도시
+    Route::get('/statistics/top_order_city', 'Api\StatisticsController@topOrderCity');
+    //시간별 주문량
+    Route::get('/statistics/top_order_by_date', 'Api\StatisticsController@topOrderByDate');
+
     //get db list
     Route::get('/db/raw_orders', 'Api\AdminController@rawOrders');
     Route::post('/db/delete_all', 'Api\AdminController@deleteAllOrders');
