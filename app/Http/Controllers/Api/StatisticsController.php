@@ -167,4 +167,17 @@ class StatisticsController extends BaseController
         $data = compact('items');
         return $this->sendResponse($data);
     }
+
+    public function topDeliveryStatusByOrder(Request $request)
+    {
+
+        Order::$withoutAppends = true;
+        $items = Order::with('status')
+            ->select('delivery_status', DB::raw('count(*) cnt'))
+            ->groupBy('delivery_status')
+            ->get();
+
+        $data = compact('items');
+        return $this->sendResponse($data);
+    }
 }

@@ -101,6 +101,8 @@ Route::group(['middleware' => 'jwt.auth', 'prefix' => 'admin'], function () {
     Route::get('/statistics/top_order_city', 'Api\StatisticsController@topOrderCity');
     //시간별 주문량
     Route::get('/statistics/top_order_by_date', 'Api\StatisticsController@topOrderByDate');
+    //배송상태별 주문량
+    Route::get('/statistics/top_delivery_staus_by_order', 'Api\StatisticsController@topDeliveryStatusByOrder');
 
     //get db list
     Route::get('/db/raw_orders', 'Api\AdminController@rawOrders');
