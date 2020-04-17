@@ -417,6 +417,8 @@ class AdminController extends BaseController
         $count           = $request->count;
 
         $cnt = $request->count ? $page_counts[$request->count] : $page_counts[0];
+        var_dump($request->count);
+        var_dump($page_counts);
         var_dump($cnt);
         die();
 
