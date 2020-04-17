@@ -553,7 +553,7 @@ export default {
             delivery_status: this.form.delivery_status,
             page: this.page,
           }
-        })
+        }).catch(err => {})
       
       } catch (e){
         console.log(e)
