@@ -39,15 +39,15 @@ class OrderController extends Controller
         return response()->download($file_path, '주문내역업로드샘플.xlsx');
     }
 
-    public function export(Request $request) 
+    public function export(Request $request)
     {
-        $user = Auth::user();   
+        $user = Auth::user();
 
         //주문상태: delivery_status
         //기간: sdate, edate 
         //model_id
         //receiver 
-        
+
         $delivery_status = null; //$request->delivery_status;
         $sdate           = null; //$request->sdate;
         $edate           = null; //$request->edate;
@@ -57,13 +57,11 @@ class OrderController extends Controller
 
         //조건검색
 
-        if($request->delivery_status > 0 )
-        {
+        if ($request->delivery_status > 0) {
             $delivery_status = $request->delivery_status;
         }
 
-        if($request->sdate && $request->edate)
-        {
+        if ($request->sdate && $request->edate) {
             $sdate = $request->sdate;
             $edate = $request->edate;
         }
@@ -74,21 +72,20 @@ class OrderController extends Controller
     public function tradeView(Request $request)
     {
         $user = Auth::user();
-        
+
         //$all_total_price = $user->totalPrice();
         $all_total_price = 0;
         $orders = collect([]);
 
         //날짜검색
-        if( isset($request->sdate) && isset($request->edate) 
-            && 
-            !empty($request->sdate) && !empty($request->edate) )
-        {
+        if (
+            isset($request->sdate) && isset($request->edate)
+            &&
+            !empty($request->sdate) && !empty($request->edate)
+        ) {
             $sdate = $request->sdate;
             $edate = $request->edate;
-        }
-        else
-        {
+        } else {
             // if( $firstOrder = $user->orders->first() )
             // {
             //     $sdate = $firstOrder->created_at->format('Y-m-d');
@@ -113,22 +110,21 @@ class OrderController extends Controller
         $_sdate = Carbon::createFromFormat('Y-m-d H:i:s', $sdate . ' 00:00:00');
         $_edate = Carbon::createFromFormat('Y-m-d H:i:s', $edate . ' 23:59:59');
         $diffDays = $_sdate->diffInDays($_edate);
-        
-        for($i=0; $i<=$diffDays; $i++)
-        {
+
+        for ($i = 0; $i <= $diffDays; $i++) {
             $fromDate = Carbon::createFromFormat('Y-m-d H:i:s', $sdate . ' 00:00:00')->addDays($i);
             $a = clone $fromDate;
             $toDate = $a->addHours(23)->addMinutes(59)->addSeconds(59);
-            
-            
+
+
             $_order_list = Order::with('status')->where([
                 ['user_id', $user->id],
                 ['created_at', '>=', $fromDate],
                 ['created_at', '<=', $toDate]
             ])->get();
 
-            $total_price = $_order_list->sum(function($order) use($user){
-                $price = $order->product->price($user->shop_type_id); 
+            $total_price = $_order_list->sum(function ($order) use ($user) {
+                $price = $order->product->price($user->shop_type_id);
                 return ($price * $order->qty) + $order->delivery_price - $order->minus_price;
             });
 
@@ -139,8 +135,7 @@ class OrderController extends Controller
             ];
             $_orders['list'] = $_order_list;
 
-            if( $_orders['list']->count() > 0 )
-            {
+            if ($_orders['list']->count() > 0) {
                 $orders[] = $_orders;
             }
             // echo $fromDate . "\n";
@@ -150,12 +145,12 @@ class OrderController extends Controller
         //dd($orders);
 
         $orders = $orders->reverse();
-        
+
 
         $data = compact('sdate', 'edate', 'orders', 'all_total_price');
         return view('trade_list', $data);
     }
-    
+
     public function uploadView()
     {
         return view('upload');
@@ -171,15 +166,13 @@ class OrderController extends Controller
         $keyword = trim($request->keyword);
 
         //주문상태검색
-        if( isset($request->delivery_status) && $request->delivery_status > 0 )
-        {
+        if (isset($request->delivery_status) && $request->delivery_status > 0) {
             $status = $request->delivery_status;
             $query->where('delivery_status', $status);
             //$orders = $orders->where('delivery_status', $status);
         }
         //날짜검색
-        if( isset($request->sdate) && isset($request->edate) && !empty($request->sdate) && !empty($request->edate) )
-        {
+        if (isset($request->sdate) && isset($request->edate) && !empty($request->sdate) && !empty($request->edate)) {
             $_edate = $request->edate . ' 23:59:59';
             $query->where([
                 ['created_at', '>=', $request->sdate],
@@ -191,8 +184,7 @@ class OrderController extends Controller
             // ]);
         }
         //조건검색
-        if($keyword && $request->keyword_option)
-        {
+        if ($keyword && $request->keyword_option) {
             //keyword_option
             //1.receiver
             //2.phone
@@ -200,9 +192,8 @@ class OrderController extends Controller
             //4.id
             //5.model_id
 
-            
-            switch($request->keyword_option)
-            {
+
+            switch ($request->keyword_option) {
                 case 1:
                     $query->where('receiver', 'LIKE', "%${keyword}%");
                     break;
@@ -216,7 +207,7 @@ class OrderController extends Controller
                     $query->where('id', $keyword);
                     break;
                 case 5:
-                    $query->whereHas('product', function($q) use($keyword){
+                    $query->whereHas('product', function ($q) use ($keyword) {
                         $q->where('model_id', $keyword);
                     });
                     break;
@@ -240,6 +231,7 @@ class OrderController extends Controller
         $order_by        = $request->order_by;
 
         $data = compact('orders', 'delivery_status', 'sdate', 'edate', 'cnt', 'page_counts', 'keyword', 'keyword_option', 'keyword_options', 'order_by');
+        //dd($data);
         return view('upload_list', $data);
     }
 
@@ -250,10 +242,9 @@ class OrderController extends Controller
             'excel' => 'required|file|mimetypes:application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
         $user = Auth::user();
@@ -266,11 +257,10 @@ class OrderController extends Controller
         //dd($_orders);
 
         $orders = collect();
-        foreach($_orders as $idx => $row)
-        {
+        foreach ($_orders as $idx => $row) {
             #1.데이터 검증
             //0로우 데이터 없음
-            if( $idx == 0 ) continue;
+            if ($idx == 0) continue;
 
             //0-3공란
             //로우가 없을경우 제거
@@ -288,7 +278,7 @@ class OrderController extends Controller
             // '우편번호',
             // '주소',
             // '배송메세지'
-            if( !isset($row[4]) && !isset($row[5]) && isset($row[6]) && isset($row[7]) && !isset($row[8]) && !isset($row[9]) && !isset($row[10]) && !isset($row[11]) ) 
+            if (!isset($row[4]) && !isset($row[5]) && isset($row[6]) && isset($row[7]) && !isset($row[8]) && !isset($row[9]) && !isset($row[10]) && !isset($row[11]))
                 continue;
 
             #2.데이터가공
@@ -312,26 +302,22 @@ class OrderController extends Controller
             $set_master     = false;
             //$set_count      = 0;
 
-            if( count($address_array) > 1
+            if (
+                count($address_array) > 1
                 &&
-                ( 
-                    in_array($address_array[0], ['제주시', '제주특별자치도', '서귀포시']) 
-                    || 
-                    in_array($address_array[1], ['제주시', '제주특별자치도', '서귀포시'])
-                )
-            )
-            {
+                (in_array($address_array[0], ['제주시', '제주특별자치도', '서귀포시'])
+                    ||
+                    in_array($address_array[1], ['제주시', '제주특별자치도', '서귀포시']))
+            ) {
                 $isJeju = true;
                 //제주지역 추가 3000원
                 $delivery_price += 3000;
             }
 
-            if( isset( $orders[$idx - 2] ) )
-            {
+            if (isset($orders[$idx - 2])) {
                 $prev_idx = $idx - 2;
                 //이전 수령자와 전화번호1, 전화번호2가 전부 일치하면 세트아이템으로 표시
-                if( $prev_order = $orders[$prev_idx] )
-                {
+                if ($prev_order = $orders[$prev_idx]) {
                     //수령자
                     $prev_receiver = $prev_order->receiver;
 
@@ -341,18 +327,19 @@ class OrderController extends Controller
 
                     $current_phone_1 = $phone_1;
                     $current_phone_2 = $phone_2;
-                    
+
                     //1. 수령자 체크
-                    if( $prev_receiver == $receiver 
-                        && 
+                    if (
+                        $prev_receiver == $receiver
+                        &&
                         $prev_phone_1 == $current_phone_1
                         &&
-                        $prev_phone_2 == $current_phone_2 )
-                    {
+                        $prev_phone_2 == $current_phone_2
+                    ) {
                         $set_item = true;
                         $delivery_price = 0;
                         $prev_order->set_item = true;
-                        
+
                         // $prev_order->set_master = true;
                         // $prev_order->set_count += 1; 
                     }
@@ -377,9 +364,8 @@ class OrderController extends Controller
                 'price'            => 0,
                 'can_upload'       => true,
             ]);
-            
-            if( $product )
-            {
+
+            if ($product) {
                 $order->product_id = $product->id;
                 $shop_type         = $user->shop_type->id;
                 $order->price      = $product->price($shop_type);
@@ -388,8 +374,7 @@ class OrderController extends Controller
             $orders[] = $order;
         }
 
-        if( $orders->count() < 1 )
-        {
+        if ($orders->count() < 1) {
             return redirect()->back()->withErrors([
                 '주문내역이 존재 하지 않거나 잘못된 형식의 엑셀입니다.'
             ]);
@@ -397,37 +382,25 @@ class OrderController extends Controller
 
         $total_price = 0;
         $can_upload = true;
-        foreach($orders as $order)
-        {
+        foreach ($orders as $order) {
             $total_price += ($order->price * $order->qty);
             $total_price += $order->delivery_price;
-            if( empty($order->product_id) )
-            {
+            if (empty($order->product_id)) {
                 $can_upload = false;
                 $order->can_upload = false;
-            }
-            else if( empty($order->phone_1) ) 
-            {
+            } else if (empty($order->phone_1)) {
                 $can_upload = false;
                 $order->can_upload = false;
-            }
-            else if( empty($order->address) ) 
-            {
+            } else if (empty($order->address)) {
                 $can_upload = false;
                 $order->can_upload = false;
-            }
-            else if( empty($order->receiver) ) 
-            {
+            } else if (empty($order->receiver)) {
                 $can_upload = false;
                 $order->can_upload = false;
-            }
-            else if( empty($order->zipcode) ) 
-            {
+            } else if (empty($order->zipcode)) {
                 $can_upload = false;
                 $order->can_upload = false;
-            }
-            else if( empty($order->qty) ) 
-            {
+            } else if (empty($order->qty)) {
                 $can_upload = false;
                 $order->can_upload = false;
             }
@@ -463,18 +436,16 @@ class OrderController extends Controller
             'order.delivery_price.*'     => 'required|integer',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
         $user = Auth::user();
 
         DB::beginTransaction();
-        foreach($request->order['product_id'] as $idx => $id)
-        {
-            
+        foreach ($request->order['product_id'] as $idx => $id) {
+
             $order = new Order;
             $order->user_id          = $user->id;
             $order->product_id       = $id;
@@ -491,8 +462,7 @@ class OrderController extends Controller
 
             //$orders[] = $order;
 
-            if( !$order->save() )
-            {
+            if (!$order->save()) {
                 DB::rollback();
                 return redirect()->back()->withErrors('message', 'DB: 주문내역 생성 실패');
             }
@@ -511,27 +481,23 @@ class OrderController extends Controller
             'act' => 'required|in:back,change',
         ];
         $validator = Validator::make($credentials, $rules);
-        if( $validator->fails() )
-        {
+        if ($validator->fails()) {
             $messages = $validator->errors()->messages();
-            return redirect()->back()->withErrors( $validator->errors() );
+            return redirect()->back()->withErrors($validator->errors());
         }
 
         $user = Auth::user();
 
-        if( $order->user->id != $user->id )
-        {
+        if ($order->user->id != $user->id) {
             return redirect()->back()->withErrors('NOT_VALID_USER');
         }
 
         $order->delivery_status = $request->act == 'back' ? 5 : 6;
-        if( ! $order->save() )
-        {
+        if (!$order->save()) {
             return redirect()->back()->withErrors('NOT_UPDATE_ORDER');
         }
 
-        if( $message = $request->message )
-        {
+        if ($message = $request->message) {
             $order->message()->create([
                 'order_id' => $order->id,
                 'content' => $message

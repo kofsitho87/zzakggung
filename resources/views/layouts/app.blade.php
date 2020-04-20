@@ -59,7 +59,7 @@
                             <a class="nav-link" href="/orders/upload">다량주문 업로드</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/orders/list">주문내역 확인</a>
+                            <a class="nav-link" href="/orders/list?sdate={{ \Carbon\Carbon::now()->format('Y-m-d') }}&edate={{ \Carbon\Carbon::now()->format('Y-m-d') }}">주문내역 확인</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/orders/trade">거래내역서</a>
