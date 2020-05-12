@@ -7,7 +7,7 @@
   >
     <b-container>
       <b-navbar-brand to="/admin">
-        {{ process.env.APP_NAME }} 관리자
+        도매갓 관리자
       </b-navbar-brand>
 
       <div
