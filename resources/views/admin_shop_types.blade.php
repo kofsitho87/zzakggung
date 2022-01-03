@@ -55,7 +55,7 @@
 
     <div class="mb-3 card">
         <div class="card-header">
-            거채처 타입
+            거래처 타입
             <button class="btn btn-success btn-sm float-right" id="add">추가</button>
         </div>
         <div class="card-body">
