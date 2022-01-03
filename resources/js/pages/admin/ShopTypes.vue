@@ -1,11 +1,7 @@
 <template>
   <b-container>
     <b-card header="거래처타입관리">
-      <b-table-simple
-        ref="table"
-        responsive
-        bordered
-      >
+      <b-table-simple ref="table" responsive bordered>
         <b-thead head-variant="light">
           <b-tr>
             <b-th>거래처타입</b-th>
@@ -15,10 +11,7 @@
           </b-tr>
         </b-thead>
         <b-tbody>
-          <b-tr
-            v-for="item in shopTypes"
-            :key="item.id"
-          >
+          <b-tr v-for="item in shopTypes" :key="item.id">
             <b-td>
               <div v-if="item.id">
                 {{ item.type }}
@@ -42,13 +35,8 @@
               <div v-if="item.id">
                 {{ item.status.name }}
               </div>
-              <b-form-select
-                v-else
-                v-model="item.delivery_status"
-              >
-                <b-form-select-option :value="0">
-                  선택
-                </b-form-select-option>
+              <b-form-select v-else v-model="item.delivery_status">
+                <b-form-select-option :value="0"> 선택 </b-form-select-option>
                 <b-form-select-option :value="1">
                   입금대기
                 </b-form-select-option>
@@ -85,11 +73,7 @@
                 >
                   생성
                 </b-button>
-                <b-button
-                  size="md"
-                  variant="danger"
-                  @click="deleteItem(item)"
-                >
+                <b-button size="md" variant="danger" @click="deleteItem(item)">
                   삭제
                 </b-button>
               </b-button-group>
@@ -117,27 +101,27 @@
 
 <script>
 export default {
-  data(){
+  data() {
     //console.log( this.$store )
-    
+
     return {
       isLoading: false,
-      shopTypes: JSON.parse(JSON.stringify(this.$store.getters.shopTypes))
-    }
+      shopTypes: JSON.parse(JSON.stringify(this.$store.getters.shopTypes)),
+    };
   },
   computed: {
-    isEnableAddItem(){
-      return this.shopTypes.filter(row => row.id === 0).length < 1
+    isEnableAddItem() {
+      return this.shopTypes.filter((row) => row.id === 0).length < 1;
     },
     // shopTypes(){
     //   return this.$store.getters.shopTypes
     // }
   },
-  mounted(){
-    this.$store.dispatch("getShopTypes")
+  mounted() {
+    this.$store.dispatch("getShopTypes");
   },
   methods: {
-    addItem(){
+    addItem() {
       const shopType = {
         id: 0,
         type: null,
@@ -146,152 +130,155 @@ export default {
         status: {
           id: 0,
           name: null,
-          description: null
-        }
-      }
+          description: null,
+        },
+      };
       //this.$store.commit("CREATE_SHOP_TYPE", shopType)
-      this.shopTypes = [...this.shopTypes, shopType]
+      this.shopTypes = [...this.shopTypes, shopType];
     },
-    async createItem(item){
+    async createItem(item) {
       //console.log(item)
-      if(!item.type || item.delivery_price.length < 1 || !item.delivery_status){
+      if (
+        !item.type ||
+        item.delivery_price.length < 1 ||
+        !item.delivery_status
+      ) {
         this.$notify({
           group: "top-center",
           type: "error",
-          title: "값을 입력해주세요"
-        })
-        return
-      } else if(item.type.length != 1){
+          title: "값을 입력해주세요",
+        });
+        return;
+      } else if (item.type.length != 1) {
         this.$notify({
           group: "top-center",
           type: "error",
-          title: "거채처타입은 1글자만 입력해주세요"
-        })
-        return
-      } else if(item.delivery_price < 0){
+          title: "거래처타입은 1글자만 입력해주세요",
+        });
+        return;
+      } else if (item.delivery_price < 0) {
         this.$notify({
           group: "top-center",
           type: "error",
-          title: "배송비는 양수로 입력해주세요"
-        })
-        return
+          title: "배송비는 양수로 입력해주세요",
+        });
+        return;
       }
-      
-      this.isLoading = true
+
+      this.isLoading = true;
       try {
-        let {shopType} = await this.$store.dispatch("post", {
+        let { shopType } = await this.$store.dispatch("post", {
           api: "shop_types",
-          payload: item
-        })
+          payload: item,
+        });
         //console.log(shopType)
-        
-        this.$store.commit("CREATE_SHOP_TYPE", shopType)
-        item.id = shopType.id
-        item.status.name = shopType.status.name
+
+        this.$store.commit("CREATE_SHOP_TYPE", shopType);
+        item.id = shopType.id;
+        item.status.name = shopType.status.name;
         //this.shopTypes[this.shopTypes.length - 1] = shopType
         //this.$refs.table.refresh()
-        
+
         this.$notify({
           group: "top-center",
           type: "success",
-          title: "생성 성공"
-        })
-      } catch (e){
+          title: "생성 성공",
+        });
+      } catch (e) {
         this.$notify({
           group: "top-center",
           type: "error",
-          title: e.message
-        })
+          title: e.message,
+        });
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
     },
-    async deleteItem(item){
-      console.log(item)
+    async deleteItem(item) {
+      console.log(item);
 
-      if(item.id){
-        this.isLoading = true
+      if (item.id) {
+        this.isLoading = true;
         try {
           await this.$store.dispatch("delete", {
             api: `shop_types/${item.id}`,
-            payload: {}
-          })
-          let index = this.shopTypes.findIndex(row => row.id == item.id)
-          if(index > -1){
-            this.shopTypes.splice(index, 1)
+            payload: {},
+          });
+          let index = this.shopTypes.findIndex((row) => row.id == item.id);
+          if (index > -1) {
+            this.shopTypes.splice(index, 1);
           }
-          this.$store.commit("DELETE_SHOP_TYPE", item)
+          this.$store.commit("DELETE_SHOP_TYPE", item);
           this.$notify({
             group: "top-center",
             type: "success",
-            title: "삭제 성공"
-          })
-        } catch (e){
+            title: "삭제 성공",
+          });
+        } catch (e) {
           this.$notify({
             group: "top-center",
             type: "error",
-            title: e.message
-          })
+            title: e.message,
+          });
         } finally {
-          this.isLoading = false
+          this.isLoading = false;
         }
-      }else {
-        this.shopTypes.splice(this.shopTypes.length - 1, 1)
+      } else {
+        this.shopTypes.splice(this.shopTypes.length - 1, 1);
       }
     },
-    async changeItem(item){
-      if(!item.id){
-        return
+    async changeItem(item) {
+      if (!item.id) {
+        return;
       }
-      if(item.delivery_price.length === 0){
-        item.delivery_price = 0
+      if (item.delivery_price.length === 0) {
+        item.delivery_price = 0;
         this.$notify({
           group: "top-center",
           type: "error",
-          title: "배송비를 입력해주세요"
-        })
-        return
-      }else if(item.delivery_price < 0){
-        item.delivery_price = 0
+          title: "배송비를 입력해주세요",
+        });
+        return;
+      } else if (item.delivery_price < 0) {
+        item.delivery_price = 0;
         this.$notify({
           group: "top-center",
           type: "error",
-          title: "배송비는 0이상 값을 입력해주세요"
-        })
-        return
+          title: "배송비는 0이상 값을 입력해주세요",
+        });
+        return;
       }
 
-      this.isLoading = true
+      this.isLoading = true;
       try {
         await this.$store.dispatch("put", {
           api: `shop_types/${item.id}`,
           payload: {
-            delivery_price: parseInt(item.delivery_price)
-          }
-        })
-        
-        item.delivery_price = parseInt(item.delivery_price)
-        this.$store.commit("UPDATE_SHOP_TYPE", item)
+            delivery_price: parseInt(item.delivery_price),
+          },
+        });
+
+        item.delivery_price = parseInt(item.delivery_price);
+        this.$store.commit("UPDATE_SHOP_TYPE", item);
 
         this.$notify({
           group: "top-center",
           type: "success",
-          title: "업데이트 성공"
-        })
-      } catch (e){
+          title: "업데이트 성공",
+        });
+      } catch (e) {
         this.$notify({
           group: "top-center",
           type: "error",
-          title: e.message
-        })
+          title: e.message,
+        });
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style>
-
 </style>
