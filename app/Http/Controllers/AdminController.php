@@ -328,6 +328,10 @@ class AdminController extends Controller
                     $msg = "주문내역 삭제가 완료되었습니다.";
                 } else {
                     if ($delivery_status) {
+                        if($delivery_status == "7" && $order->delivery_status == $delivery_status){
+                            //현재 상품이 반품완료일경우 다시 반품완료로 업데이트 하지 않는다!
+                            continue;
+                        }
                         $order->delivery_status = $delivery_status;
                     }
                     if ($comment) {
